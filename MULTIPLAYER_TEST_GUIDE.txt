@@ -1,0 +1,198 @@
+═══════════════════════════════════════════════════════════════
+    GUIDE DE TEST DU MODE MULTIJOUEUR - BacLegend
+═══════════════════════════════════════════════════════════════
+
+📋 IMPORTANT:
+--------------
+Pour tester le multijoueur, vous devez lancer DEUX INSTANCES SÉPARÉES
+de l'application. Chaque instance tourne dans son propre processus Java.
+
+
+🚀 MÉTHODE RAPIDE (Recommandée) - UN SEUL CLIC
+===============================================
+
+Double-cliquez sur:  start-multiplayer-test.cmd
+
+✓ Nettoie automatiquement le port
+✓ Lance 2 fenêtres PowerShell (Hôte + Client)
+✓ Affiche les instructions dans chaque fenêtre
+✓ Affiche les logs réseau en temps réel
+
+
+🎮 MÉTHODE MANUELLE - DEUX TERMINAUX SÉPARÉS
+=============================================
+
+TERMINAL 1 (PowerShell):
+------------------------
+cd "c:\Users\abour\Documents\EMSI\Java avancé\PFM\BacLengendPlus"
+.\run-host.ps1
+
+Dans l'application qui s'ouvre:
+  1. Cliquer sur "Jouer en Multijoueur"
+  2. Cliquer sur "Créer le Serveur"
+  3. Attendre → "Serveur démarré ! En attente de connexion..."
+
+
+TERMINAL 2 (PowerShell - NOUVEAU TERMINAL):
+--------------------------------------------
+cd "c:\Users\abour\Documents\EMSI\Java avancé\PFM\BacLengendPlus"
+.\run-client.ps1
+
+Dans l'application qui s'ouvre:
+  1. Cliquer sur "Jouer en Multijoueur"
+  2. Vérifier que l'IP est "127.0.0.1"
+  3. Cliquer sur "Rejoindre"
+
+➜ LES DEUX FENÊTRES PASSENT À L'ÉCRAN DE JEU!
+
+
+🖥️ MÉTHODE DEPUIS L'IDE (IntelliJ / Eclipse / VS Code)
+========================================================
+
+LANCEMENT 1:
+------------
+- Clic droit sur App.java → Run 'App.main()'
+- Attendez que l'application s'ouvre
+- Multijoueur → Créer le Serveur
+
+
+LANCEMENT 2:
+------------
+- Clic droit sur App.java → Run 'App.main()' (ENCORE!)
+- Une DEUXIÈME fenêtre s'ouvre
+- Multijoueur → IP: 127.0.0.1 → Rejoindre
+
+✓ IntelliJ/Eclipse permet de lancer plusieurs instances
+✓ Vous verrez les logs réseau dans DEUX onglets console séparés
+
+
+
+🌐 MÉTHODE 2: TESTER SUR DEUX ORDINATEURS (Réseau)
+===================================================
+
+SUR L'ORDINATEUR HÔTE:
+----------------------
+1. Trouvez votre adresse IP locale:
+   ipconfig
+   
+   Cherchez "Adresse IPv4" (ex: 192.168.1.10)
+
+2. Lancez l'application
+3. Cliquez "Jouer en Multijoueur" > "Créer le Serveur"
+
+
+SUR L'ORDINATEUR CLIENT:
+-------------------------
+1. Lancez l'application
+2. Cliquez "Jouer en Multijoueur"
+3. Dans le champ IP, entrez l'IP de l'hôte (ex: 192.168.1.10)
+4. Cliquez "Rejoindre"
+
+
+⚠️ IMPORTANT - Pare-feu Windows:
+---------------------------------
+Si la connexion échoue entre deux PCs:
+
+1. Ouvrez "Pare-feu Windows Defender"
+2. Cliquez "Autoriser une application..."
+3. Ajoutez Java (javaw.exe)
+4. OU exécutez:
+   netsh advfirewall firewall add rule name="BacLegend" dir=in action=allow protocol=TCP localport=12345
+
+
+
+🔍 VÉRIFICATION DES MESSAGES RÉSEAU
+====================================
+
+Dans la CONSOLE (output), vous devriez voir:
+
+CÔTÉ HÔTE:
+----------
+Serveur en attente de connexion sur le port 12345
+Client connecté : /127.0.0.1
+LETTER:Z
+Message reçu : READY
+Message reçu : ANSWERS:Animal=Zèbre;Pays=Zambie;...
+
+
+CÔTÉ CLIENT:
+------------
+Connecté au serveur 127.0.0.1
+Message reçu : WELCOME
+Message reçu : LETTER:Z
+Envoi: READY
+
+
+
+🐛 DÉPANNAGE
+=============
+
+Problème: "Address already in use"
+Solution: 
+  • Fermez complètement les anciennes instances
+  • Attendez 5 secondes
+  • Relancez
+  • OU changez le port dans LobbyController.java (ligne avec 12345)
+
+
+Problème: "Connection refused"
+Solution:
+  • Vérifiez que l'hôte a bien lancé le serveur AVANT
+  • Vérifiez l'adresse IP
+  • Vérifiez le pare-feu
+
+
+Problème: Les deux joueurs ne voient pas la même lettre
+Solution:
+  • C'est normal pour l'instant - seul l'hôte génère la lettre
+  • La synchronisation complète sera ajoutée dans une prochaine version
+
+
+Problème: Pas de réponse après avoir cliqué "Rejoindre"
+Solution:
+  • Vérifiez la console pour les messages d'erreur
+  • Assurez-vous que le serveur est en attente (pas encore connecté)
+
+
+
+📊 VÉRIFIER QUE ÇA MARCHE
+==========================
+
+✓ Pas d'exception dans la console
+✓ Message "Client connecté" côté hôte
+✓ Message "Connecté au serveur" côté client
+✓ Les deux joueurs sont redirigés vers l'écran de jeu
+✓ Dans la console, on voit "LETTER:X" et "ANSWERS:..."
+✓ Chaque joueur peut soumettre ses réponses
+
+
+
+💡 CONSEILS
+===========
+
+• Gardez les consoles ouvertes pour voir les messages réseau
+• Testez d'abord en local (127.0.0.1) avant de tester sur réseau
+• Si vous modifiez le code, recompilez avec: mvn clean package
+• Pour tuer un port bloqué: netstat -ano | findstr :12345
+                           puis: taskkill /PID <numero> /F
+
+
+
+🎯 TEST RAPIDE
+==============
+
+Terminal 1:
+java -jar target\BacLengendPlus-1.0-SNAPSHOT.jar
+> Multijoueur > Créer le Serveur
+
+Terminal 2:
+java -jar target\BacLengendPlus-1.0-SNAPSHOT.jar
+> Multijoueur > IP: 127.0.0.1 > Rejoindre
+
+✓ Les deux fenêtres passent à l'écran de jeu = SUCCESS!
+
+
+
+═══════════════════════════════════════════════════════════════
+Pour plus d'aide: vérifiez les messages dans la console
+═══════════════════════════════════════════════════════════════

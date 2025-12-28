@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emsi.baclegend.controller.GameController" styleClass="root">
+    
+    <!-- Main Game Layer -->
+    <BorderPane>
+        <top>
+             <HBox alignment="CENTER" spacing="50" style="-fx-padding: 20;">
+                <VBox alignment="CENTER" styleClass="game-card" prefWidth="120">
+                    <Label text="Lettre" style="-fx-font-size: 14px; -fx-text-fill: #aaa;" />
+                    <Label fx:id="lblLettre" text="?" style="-fx-font-size: 48px; -fx-text-fill: #f5af19; -fx-font-weight: bold;" />
+                </VBox>
+
+                <VBox alignment="CENTER" spacing="5" styleClass="game-card" prefWidth="300">
+                     <Label text="Temps Restant" style="-fx-font-size: 14px; -fx-text-fill: #aaa;"/>
+                     <ProgressBar fx:id="progressTimer" prefWidth="250.0" progress="1.0" />
+                </VBox>
+
+                <VBox alignment="CENTER" styleClass="game-card" prefWidth="120">
+                    <Label text="Score" style="-fx-font-size: 14px; -fx-text-fill: #aaa;" />
+                    <Label fx:id="lblScore" text="0" style="-fx-font-size: 36px; -fx-text-fill: #00ff87;" />
+                </VBox>
+                
+                <!-- Hidden Deprecated Fields to prevent NullPointer if controller refs them -->
+                <Label fx:id="lblAdversaireTitle" visible="false"/>
+                <Label fx:id="lblAdversaireScore" visible="false"/>
+             </HBox>
+        </top>
+
+        <center>
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-viewport-background: transparent;">
+                <VBox fx:id="vboxCategories" spacing="15" alignment="CENTER" style="-fx-padding: 30; -fx-background-color: transparent;">
+                    <!-- Categories generated dynamically -->
+                </VBox>
+            </ScrollPane>
+        </center>
+
+        <bottom>
+            <HBox alignment="CENTER" spacing="20" style="-fx-padding: 20;">
+                <Button text="Quitter" onAction="#handleRetour" style="-fx-background-color: #ff416c;" />
+                <Button fx:id="btnValider" text="VALIDER !" onAction="#handleValider" style="-fx-font-size: 20px; -fx-padding: 15 40;" />
+            </HBox>
+        </bottom>
+    </BorderPane>
+
+    <!-- Results Overlay (Hidden by default) -->
+    <VBox fx:id="overlayResults" visible="false" alignment="CENTER" style="-fx-background-color: rgba(0,0,0,0.85);">
+        <VBox styleClass="overlay-panel" alignment="CENTER" spacing="20" maxWidth="600" maxHeight="500">
+             <Label fx:id="lblResultTitle" text="RÉSULTATS DU TOUR" styleClass="title-text" />
+             <TextArea fx:id="txtResultDetails" editable="false" wrapText="true" prefHeight="300" prefWidth="500" 
+                       style="-fx-control-inner-background: rgba(255,255,255,0.1); -fx-text-fill: white; -fx-font-size: 16px; -fx-font-family: 'Consolas';"/>
+             <HBox spacing="20" alignment="CENTER">
+                 <Button text="Quitter" onAction="#handleRetour" style="-fx-background-color: #ff416c;" />
+                 <Button text="Tour Suivant / Rejouer" onAction="#handleCloseResults" styleClass="button" />
+             </HBox>
+        </VBox>
+    </VBox>
+
+</StackPane>

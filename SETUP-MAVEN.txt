@@ -1,0 +1,108 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║              SETUP MAVEN - PREREQUIS POUR LE TEST                 ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+
+⚠️  ERREUR ACTUELLE:
+   "mvn n'est pas reconnu"
+   → Maven n'est PAS installé sur votre ordinateur
+
+
+✅ SOLUTION - Installez Maven:
+
+1. Téléchargez Maven:
+   https://maven.apache.org/download.cgi
+   
+   Choisissez: "Binary zip archive" (apache-maven-x.x.x-bin.zip)
+
+2. Décompressez le fichier ZIP
+   Exemple: C:\maven\apache-maven-3.9.x\
+
+3. Ajoutez Maven au PATH Windows:
+   
+   Option A (Recommandée - GUI):
+   ─────────────────────────────
+   
+   • Appuyez sur Windows + X
+   • Cliquez sur "Paramètres système"
+   • Cliquez sur "Paramètres avancés du système"
+   • Cliquez sur "Variables d'environnement..."
+   • Dans "Variables utilisateur": cliquez "Nouveau"
+   
+   Nom: MAVEN_HOME
+   Valeur: C:\maven\apache-maven-3.9.x
+   
+   (remplacez le chemin selon où vous avez décompressé Maven)
+   
+   • Cherchez la variable "Path" → cliquez "Modifier"
+   • Cliquez "Nouveau"
+   • Ajoutez: %MAVEN_HOME%\bin
+   • Cliquez OK partout
+   
+   
+   Option B (Ligne de commande - PowerShell Admin):
+   ──────────────────────────────────────────────
+   
+   [Environment]::SetEnvironmentVariable("MAVEN_HOME", 
+   "C:\maven\apache-maven-3.9.x", "User")
+   
+   (remplacez le chemin approprié)
+
+4. Redémarrez PowerShell COMPLÈTEMENT
+   • Fermez tous les PowerShell ouverts
+   • Ouvrez un NOUVEAU PowerShell
+
+5. Vérifiez l'installation:
+   
+   Ouvrez PowerShell et tapez:
+   mvn --version
+   
+   Vous devriez voir:
+   Apache Maven 3.9.x
+   ...
+   
+
+6. Maintenant, essayez le test:
+   
+   Double-cliquez sur: start-multiplayer-test.cmd
+
+
+════════════════════════════════════════════════════════════════════
+
+
+ALTERNATIVE: Si Maven ne fonctionne TOUJOURS PAS:
+
+• Assurez-vous d'avoir JAVA installé:
+  java -version
+  
+  Si pas reconnu, installez Java:
+  https://www.oracle.com/java/technologies/downloads/
+
+• Assurez-vous d'utiliser les bons chemins
+  (remplacez X par votre version actuelle)
+
+• Relancez PowerShell/CMD APRÈS l'installation
+
+════════════════════════════════════════════════════════════════════
+
+
+DIAGNOSTIC RAPIDE:
+
+Ouvrez PowerShell et tapez:
+
+java -version
+→ Devrait afficher: "java version"
+
+javac -version
+→ Devrait afficher: "javac version"
+
+mvn --version
+→ Devrait afficher: "Apache Maven"
+
+
+Si un de ces commandes n'est pas reconnu:
+1. Installez le logiciel
+2. Redémarrez PowerShell
+3. Réessayez

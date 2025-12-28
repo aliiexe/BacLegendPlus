@@ -1,0 +1,43 @@
+═══════════════════════════════════════════════════════════
+        SOLUTION RAPIDE - SANS MAVEN
+═══════════════════════════════════════════════════════════
+
+
+✅ ÉTAPES À SUIVRE:
+
+1. Ouvrez votre IDE:
+   • IntelliJ IDEA
+   • Eclipse
+   • VS Code
+
+2. Ouvrez le projet: BacLengendPlus
+
+3. Cherchez et ouvrez: App.java
+   (Dossier: src/main/java/com/emsi/baclegend/)
+
+4. Clic droit sur App.java
+
+5. Sélectionnez: Run 'App.main()'
+   (Ou: Run As > Java Application)
+
+6. Une fenetre JavaFX s'ouvre
+   → Cliquez: Multijoueur
+   → Cliquez: Créer le Serveur
+   → Attendez "En attente..."
+
+7. Refaites l'Étape 3-6 pour la 2e instance
+   (Clic droit > Run)
+
+8. Dans la 2e fenetre:
+   → Cliquez: Multijoueur
+   → IP: 127.0.0.1
+   → Cliquez: Rejoindre
+
+9. ✅ LES DEUX FENÊTRES PASSENT AU JEU!
+
+
+═══════════════════════════════════════════════════════════
+
+C'est tout! Aucun Maven à installer.
+
+═══════════════════════════════════════════════════════════

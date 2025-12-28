@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox alignment="CENTER" spacing="30.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emsi.baclegend.controller.LobbyController" styleClass="root">
+   <children>
+      <Label text="MULTIJOUEUR" styleClass="title-text" />
+      
+      <HBox spacing="40" alignment="CENTER">
+          <!-- HOST CARD -->
+          <VBox alignment="CENTER" spacing="15.0" styleClass="game-card" prefWidth="300">
+             <children>
+                <Label text="CRÉER UNE PARTIE" style="-fx-font-size: 18px; -fx-text-fill: #f5af19; -fx-font-weight: bold;"/>
+                <Label text="(Vous serez l'hôte)" style="-fx-text-fill: #aaa; -fx-font-size: 12px;" />
+                
+                <Button mnemonicParsing="false" onAction="#handleHost" text="Créer le Serveur" styleClass="button" />
+                
+                <VBox alignment="CENTER" spacing="5">
+                    <HBox alignment="CENTER" spacing="10">
+                        <Label fx:id="lblRoomCode" text="..." style="-fx-font-family: 'Consolas'; -fx-font-size: 24px; -fx-text-fill: #00ff87; -fx-font-weight: bold;" />
+                        <Button text="COPIER" onAction="#handleCopyCode" styleClass="button" style="-fx-padding: 5 15; -fx-font-size: 12px; -fx-background-color: rgba(0, 255, 135, 0.2);" />
+                    </HBox>
+                    <Label fx:id="lblStatusHost" wrapText="true" textAlignment="CENTER" style="-fx-text-fill: white;" />
+                </VBox>
+             </children>
+          </VBox>
+          
+          <!-- JOIN CARD -->
+          <VBox alignment="CENTER" spacing="15.0" styleClass="game-card" prefWidth="300">
+             <children>
+                <Label text="REJOINDRE" style="-fx-font-size: 18px; -fx-text-fill: #00e676; -fx-font-weight: bold;"/>
+                <Label text="(Entrez le code de l'hôte)" style="-fx-text-fill: #aaa; -fx-font-size: 12px;" />
+                
+                <TextField fx:id="txtCode" promptText="Code de la salle" styleClass="text-field" alignment="CENTER" />
+                <Button mnemonicParsing="false" onAction="#handleJoin" text="Rejoindre" styleClass="button" />
+                
+                <Label fx:id="lblStatusJoin" wrapText="true" textAlignment="CENTER" style="-fx-text-fill: white;" />
+             </children>
+          </VBox>
+      </HBox>
+      
+      <VBox alignment="CENTER" spacing="10" styleClass="game-card" maxWidth="640">
+           <Label text="JOUEURS CONNECTÉS" style="-fx-font-size: 14px; -fx-text-fill: #aaa;"/>
+           <VBox fx:id="vboxPlayers" alignment="CENTER" spacing="5" />
+           <Button fx:id="btnStartGame" onAction="#handleStartGame" text="LANCER LA PARTIE" visible="false" styleClass="button" style="-fx-background-color: linear-gradient(to right, #11998e, #38ef7d);" />
+      </VBox>
+      
+      <Button mnemonicParsing="false" onAction="#handleRetour" text="← Retour" styleClass="button" style="-fx-background-color: rgba(255,255,255,0.1);" />
+   </children>
+   <padding>
+      <Insets bottom="50.0" left="50.0" right="50.0" top="50.0" />
+   </padding>
+</VBox>

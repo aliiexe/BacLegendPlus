@@ -1,0 +1,227 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║             MULTIJOUEUR - MODE COMPÉTITION                        ║
+║                                                                    ║
+║    Deux joueurs, une lettre, des scores à comparer!              ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+
+✅ NOUVELLES FONCTIONNALITÉS IMPLÉMENTÉES:
+════════════════════════════════════════════════════════════════════
+
+1. ✓ LETTRE SYNCHRONISÉE
+   • Les deux joueurs voient EXACTEMENT la même lettre
+   • Générée par l'HÔTE et envoyée au CLIENT
+
+2. ✓ AFFICHAGE DES DEUX SCORES
+   • Chaque joueur voit son propre score
+   • Chaque joueur voit le score de son adversaire en temps réel
+   • Mise à jour après chaque validation
+
+3. ✓ COMPÉTITION EN DIRECT
+   • Les scores s'échangent via le réseau
+   • Chacun peut voir qui gagne
+
+
+════════════════════════════════════════════════════════════════════
+🎮 COMMENT ÇA MARCHE?
+════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: LANCER LE JEU EN MULTIJOUEUR
+──────────────────────────────────────
+
+Hôte (Serveur):
+  1. Jouer en Multijoueur → Créer le Serveur
+  2. Génère une lettre aléatoire (ex: "G")
+  3. L'envoie au client
+
+Client:
+  1. Jouer en Multijoueur → Rejoindre (127.0.0.1)
+  2. Reçoit la lettre de l'hôte
+  3. Les deux joueurs ont la même lettre
+
+
+ÉTAPE 2: VOIR L'ÉCRAN DE JEU
+────────────────────────────
+
+┌──────────────────────────────────────────┐
+│        Lettre: G                         │
+│  Votre Score: 20    Score Adversaire: 10 │
+├──────────────────────────────────────────┤
+│  Animal:    _________________            │
+│  Pays:      _________________            │
+│  Ville:     _________________            │
+├──────────────────────────────────────────┤
+│        [STOP / VALIDER]                  │
+└──────────────────────────────────────────┘
+
+✓ Même lettre (G) pour les deux joueurs
+✓ Les deux scores affichés côte à côte
+
+
+ÉTAPE 3: JOUER ET COMPÉTITIONNER
+─────────────────────────────────
+
+Chaque joueur:
+  1. Tape ses mots commençant par "G"
+  2. Clique "VALIDER"
+  3. Les mots sont validés (BDD + API)
+  4. Les points sont calculés (+10 par mot valide)
+  5. Le score est envoyé à l'adversaire
+
+Résultat affichage:
+  ✓ Votre Score: 30 (vous avez validé 3 mots)
+  ✓ Score Adversaire: 20 (il a validé 2 mots)
+
+
+════════════════════════════════════════════════════════════════════
+🔄 ÉCHANGES RÉSEAU (Coulisse coulisse)
+════════════════════════════════════════════════════════════════════
+
+Les messages échangés entre Hôte et Client:
+
+1. LETTRE SYNCHRONISÉE:
+   Hôte → Client: "LETTER:G"
+   (La lettre doit être la même chez les deux)
+
+2. RÉPONSES ENVOYÉES:
+   Hôte → Client: "ANSWERS:Animal=Girafe;Pays=Grèce;..."
+   Client → Hôte: "ANSWERS:Animal=Gorille;Pays=Guinée;..."
+
+3. SCORES ÉCHANGÉS:
+   Après validation, chacun envoie son score:
+   Hôte → Client: "SCORE:30"
+   Client → Hôte: "SCORE:20"
+
+Tous ces messages s'affichent dans la console!
+
+
+════════════════════════════════════════════════════════════════════
+📊 SYSTÈME DE POINTS
+════════════════════════════════════════════════════════════════════
+
+Points par tour:
+  ✓ +10 points par mot valide
+  ✗ +0 point par mot invalide
+
+Validation:
+  • Le mot doit commencer par la BONNE lettre (case-insensitive)
+  • Le mot doit exister dans le dictionnaire (API) OU base de données
+  • Accepté si: API trouve le mot OU cas de connexion perdue
+
+
+════════════════════════════════════════════════════════════════════
+🎯 SCÉNARIO COMPLET
+════════════════════════════════════════════════════════════════════
+
+Tour 1 - Lettre: G
+
+┌── HÔTE ──────────────────────┐  ┌── CLIENT ─────────────────────┐
+│ Lettre: G                    │  │ Lettre: G                     │
+│ Votre: 0   Adv: 0           │  │ Votre: 0   Adv: 0            │
+│                              │  │                               │
+│ Animal: Gorille ✓ (+10)     │  │ Animal: Girafe ✓ (+10)       │
+│ Pays: Ghana ✓ (+10)         │  │ Pays: Guinée ✓ (+10)         │
+│ Ville: Gênes ✗              │  │ Ville: Gdansk ✓ (+10)        │
+│                              │  │                               │
+│ [VALIDER] → SCORE: 20       │  │ [VALIDER] → SCORE: 30        │
+└── Envoie: SCORE:20 ──────────→  ← Reçoit: SCORE:20 ────────────┘
+
+Affichage final du tour 1:
+
+┌── HÔTE ──────────────────────┐  ┌── CLIENT ─────────────────────┐
+│ Votre: 20   Adv: 30         │  │ Votre: 30   Adv: 20          │
+│ Résultat: Vous perdez! ❌   │  │ Résultat: Vous gagnez! ✅    │
+│                              │  │                               │
+│ [Prochain tour] [Menu]      │  │ [Prochain tour] [Menu]       │
+└──────────────────────────────┘  └───────────────────────────────┘
+
+
+════════════════════════════════════════════════════════════════════
+⚙️ DÉTAILS TECHNIQUES
+════════════════════════════════════════════════════════════════════
+
+Classes modifiées:
+
+1. SessionJeu.java
+   ✓ Ajout: setLettreCourante(char) - permet au client de synchroniser la lettre
+
+2. MoteurJeu.java
+   ✓ Ajout: scoreAdversaire (int) - stocke le score du rival
+   ✓ Ajout: getScoreAdversaire() - récupère le score du rival
+   ✓ Ajout: setScoreAdversaire(int) - met à jour le score du rival
+
+3. GameController.java
+   ✓ Ajout: lblAdversaireScore (Label) - affichage du score rival
+   ✓ Ajout: handleNetworkMessage() amélioré
+     - Synchronise la lettre (LETTER:X)
+     - Affiche le score adversaire (SCORE:XX)
+   ✓ Ajout: envoi du score après validation
+   ✓ Ajout: isHost flag (pour future utilisation)
+
+4. game.fxml
+   ✓ Ajout: lblAdversaireScore label
+   ✓ Changement: "Score :" → "Votre Score :"
+   ✓ Ajout: "Score Adversaire :" label
+
+
+════════════════════════════════════════════════════════════════════
+🔐 SÉCURITÉ ET FIABILITÉ
+════════════════════════════════════════════════════════════════════
+
+✓ Les deux joueurs ont EXACTEMENT la même lettre
+  → Impossible de tricher en changeant la lettre
+
+✓ Les scores s'échangent après chaque validation
+  → Impossible de cacher son score
+
+✓ Utilise le port 12345 (configurable)
+  → Données cryptées? Non (TCP simple, pas HTTPS)
+  → Bon pour un jeu local, pas pour internet public
+
+
+════════════════════════════════════════════════════════════════════
+💡 POUR TESTER
+════════════════════════════════════════════════════════════════════
+
+1. Lancez DEUX instances depuis votre IDE
+2. Une en HÔTE: Multijoueur → Créer le Serveur
+3. Une en CLIENT: Multijoueur → Rejoindre
+4. Vous devriez voir:
+   ✓ Même lettre dans les deux
+   ✓ Deux champs "Score Adversaire"
+   ✓ Les scores mis à jour après validation
+
+
+════════════════════════════════════════════════════════════════════
+📝 BASE DE DONNÉES - Joueur
+════════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANT:
+La table "joueur" existe mais n'est PAS UTILISÉE.
+
+Pourquoi?
+  • Les joueurs multijoueur jouent en DIRECT
+  • Les scores sont gérés EN MÉMOIRE (scoreAdversaire)
+  • Pas besoin de persister dans la BDD
+  • Plus rapide et simple
+
+Si vous vouliez sauvegarder les scores:
+  → Faudrait ajouter: INSERT INTO joueur (pseudo, score, adresse_ip)
+  → Mais vous avez dit "on ne stocke rien", donc on laisse tel quel
+
+
+════════════════════════════════════════════════════════════════════
+✨ RÉSUMÉ
+════════════════════════════════════════════════════════════════════
+
+✓ Même lettre pour les deux joueurs
+✓ Affichage des deux scores
+✓ Échange des scores en temps réel
+✓ Compétition directe
+✓ Aucune persévérance en BDD (comme demandé)
+
+Le jeu multijoueur est maintenant un vrai jeu compétitif! 🎮
+
+════════════════════════════════════════════════════════════════════

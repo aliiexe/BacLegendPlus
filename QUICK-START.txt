@@ -1,0 +1,39 @@
+╔════════════════════════════════════════════════════════════╗
+║           LANCER LE TEST MULTIJOUEUR                       ║
+║                                                            ║
+║     DOUBLE-CLIQUEZ SUR: start-multiplayer-test.cmd        ║
+║                                                            ║
+╚════════════════════════════════════════════════════════════╝
+
+
+Cela va lancer automatiquement:
+  ✓ Nettoyage du port 12345
+  ✓ Instance HOTE (fenetre verte)
+  ✓ Instance CLIENT (fenetre bleue)
+
+
+═══════════════════════════════════════════════════════════════
+
+INSTRUCTIONS:
+
+Fenetre VERTE (HOTE):
+  1. Cliquez sur "Jouer en Multijoueur"
+  2. Cliquez sur "Creer le Serveur"
+  3. Attendez "Serveur demarré ! En attente..."
+
+Fenetre BLEUE (CLIENT):
+  1. Cliquez sur "Jouer en Multijoueur"
+  2. Verifiez que l'IP est "127.0.0.1"
+  3. Cliquez sur "Rejoindre"
+
+SUCCES: Les deux fenetres passent à l'écran de jeu!
+
+═══════════════════════════════════════════════════════════════
+
+FICHIERS:
+
+start-multiplayer-test.cmd   ← Double-cliquez ici!
+run-host.bat                 ← Lance HOTE seule
+run-client.bat               ← Lance CLIENT seule
+
+═══════════════════════════════════════════════════════════════

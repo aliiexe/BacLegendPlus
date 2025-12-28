@@ -1,0 +1,174 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                                                                    ║
+║          LANCER LE TEST MULTIJOUEUR DEPUIS VOTRE IDE              ║
+║                                                                    ║
+║          (Solution simple - sans Maven)                           ║
+║                                                                    ║
+╚════════════════════════════════════════════════════════════════════╝
+
+
+⚡ SOLUTION LA PLUS SIMPLE:
+════════════════════════════════════════════════════════════════════
+
+Si Maven ne fonctionne pas, lancez directement depuis votre IDE!
+
+
+✅ AVEC IntelliJ IDEA (Recommandé)
+═══════════════════════════════════════════════════════════════════
+
+LANCER L'HÔTE:
+───────────────
+1. Ouvrez: src/main/java/com/emsi/baclegend/App.java
+2. Clic droit sur la classe
+3. Cliquez: Run 'App.main()'
+4. Une fenetre JavaFX s'ouvre
+5. Cliquez: Multijoueur → Créer le Serveur
+6. Attendez: "Serveur démarré ! En attente..."
+
+LANCER LE CLIENT:
+────────────────
+7. Refaites la même chose (Clic droit sur App.java > Run)
+8. UNE DEUXIÈME fenetre JavaFX s'ouvre
+9. Cliquez: Multijoueur → Rejoindre (IP: 127.0.0.1)
+
+✅ LES DEUX FENÊTRES PASSENT AU JEU!
+
+
+✅ AVEC ECLIPSE
+═══════════════════════════════════════════════════════════════════
+
+LANCER L'HÔTE:
+───────────────
+1. Cherchez: App.java dans Package Explorer
+2. Clic droit > Run As > Java Application
+3. Une fenetre JavaFX s'ouvre
+4. Cliquez: Multijoueur → Créer le Serveur
+
+LANCER LE CLIENT:
+────────────────
+5. Clic droit sur App.java > Run As > Java Application
+6. Une DEUXIÈME fenetre JavaFX s'ouvre
+7. Cliquez: Multijoueur → Rejoindre (127.0.0.1)
+
+✅ SUCCESS!
+
+
+✅ AVEC VS CODE
+═══════════════════════════════════════════════════════════════════
+
+1. Installez l'extension "Extension Pack for Java"
+   (Microsoft)
+
+2. Ouvrez: src/main/java/com/emsi/baclegend/App.java
+
+3. Cliquez sur "Run" au-dessus de la classe App
+
+4. Une fenetre JavaFX s'ouvre
+
+5. Répétez pour lancer une deuxième instance
+
+6. Suivez les instructions de multijoueur
+
+
+════════════════════════════════════════════════════════════════════
+📊 AVANTAGES DE LANCER DEPUIS L'IDE
+════════════════════════════════════════════════════════════════════
+
+✓ Pas besoin d'installer Maven
+✓ Les erreurs s'affichent dans l'IDE
+✓ Vous pouvez déboguer facilement
+✓ Plus rapide
+✓ Fonctionne toujours
+
+
+════════════════════════════════════════════════════════════════════
+⚠️  ERREURS COURANTES
+════════════════════════════════════════════════════════════════════
+
+Erreur: "Impossible de trouver App.java"
+→ Assurez-vous que le projet est bien ouvert dans l'IDE
+→ Cherchez: src/main/java/com/emsi/baclegend/App.java
+
+Erreur: "Run is not available"
+→ Assurez-vous qu'aucun programme compilé ne s'exécute
+→ Fermez les anciennes instances
+
+Erreur: "Address already in use"
+→ Exécutez: powershell -ExecutionPolicy Bypass -File cleanup-port.ps1
+
+
+════════════════════════════════════════════════════════════════════
+🎯 ÉTAPES COMPLÈTES
+════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1: Ouvrir le projet dans l'IDE
+   • IntelliJ: File > Open > BacLengendPlus
+   • Eclipse: File > Import > Existing Maven Projects
+   • VS Code: File > Open Folder > BacLengendPlus
+
+ÉTAPE 2: Attendre que le projet se charge
+   • Laissez l'IDE indexer les fichiers
+   • Attendez quelques secondes
+
+ÉTAPE 3: Trouver App.java
+   • IntelliJ: Ctrl+N > App
+   • Eclipse: Ctrl+F > App.java
+   • VS Code: Ctrl+P > App.java
+
+ÉTAPE 4: Lancer l'HÔTE
+   • Clic droit sur App.java
+   • Cliquez: Run 'App.main()' (ou similaire)
+   • Une fenetre s'ouvre
+   • Cliquez: Multijoueur → Créer le Serveur
+
+ÉTAPE 5: Lancer le CLIENT
+   • Refaites Étape 3-4
+   • Cliquez: Multijoueur → Rejoindre (127.0.0.1)
+
+ÉTAPE 6: SUCCESS!
+   • Les deux joueurs sont dans le jeu
+   • Vous voyez la même lettre
+   • Test réussi!
+
+
+════════════════════════════════════════════════════════════════════
+💡 CONSEIL: UTILISER DEUX FENÊTRES IDE
+════════════════════════════════════════════════════════════════════
+
+Pour faciliter le test, vous pouvez:
+
+1. Ouvrir l'IDE DEUX FOIS (2 instances)
+   Ou
+2. Ouvrir le même projet dans 2 onglets
+
+Comme ça vous voyez les deux consoles côte à côte!
+
+
+════════════════════════════════════════════════════════════════════
+📚 RESSOURCES
+════════════════════════════════════════════════════════════════════
+
+IntelliJ IDEA:
+   https://www.jetbrains.com/idea/download/
+
+Eclipse IDE:
+   https://www.eclipse.org/downloads/
+
+VS Code:
+   https://code.visualstudio.com/
+
+
+════════════════════════════════════════════════════════════════════
+✨ RÉSUMÉ
+════════════════════════════════════════════════════════════════════
+
+1. Ouvrez votre IDE
+2. Ouvrez le projet BacLengendPlus
+3. Cherchez App.java
+4. Clic droit > Run
+5. Répétez pour lancer une deuxième instance
+6. Suivez les instructions de multijoueur
+
+C'est tout! Aucun Maven requis!
+
+════════════════════════════════════════════════════════════════════
