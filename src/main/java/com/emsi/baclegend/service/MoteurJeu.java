@@ -1,5 +1,6 @@
 package com.emsi.baclegend.service;
 
+import com.emsi.baclegend.App;
 import com.emsi.baclegend.dao.CategorieDAO;
 import com.emsi.baclegend.model.Categorie;
 import com.emsi.baclegend.model.SessionJeu;
@@ -26,7 +27,8 @@ public class MoteurJeu {
 
     public void demarrerNouvellePartie() {
         List<Categorie> categories = categorieDAO.obtenirToutes();
-        this.sessionCourante = new SessionJeu(categories);
+        // Use global game time setting
+        this.sessionCourante = new SessionJeu(categories, App.gameTimeDuration);
         this.sessionCourante.demarrerPartie();
         this.score = 0;
         this.scoreAdversaire = 0;
@@ -59,11 +61,23 @@ public class MoteurJeu {
 
     public void ajusterScore(int delta) {
         this.score += delta;
-        if (this.score < 0) this.score = 0;
+        if (this.score < 0)
+            this.score = 0;
     }
 
-    public SessionJeu getSessionCourante() { return sessionCourante; }
-    public int getScore() { return score; }
-    public int getScoreAdversaire() { return scoreAdversaire; }
-    public void setScoreAdversaire(int score) { this.scoreAdversaire = score; }
+    public SessionJeu getSessionCourante() {
+        return sessionCourante;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public int getScoreAdversaire() {
+        return scoreAdversaire;
+    }
+
+    public void setScoreAdversaire(int score) {
+        this.scoreAdversaire = score;
+    }
 }

@@ -17,6 +17,13 @@ public class SessionJeu {
         this.tempsLimite = 60; // Valeur par défaut
     }
 
+    public SessionJeu(List<Categorie> categories, int tempsLimite) {
+        this.categories = categories;
+        this.enCours = false;
+        this.idSession = java.util.UUID.randomUUID().toString();
+        this.tempsLimite = tempsLimite;
+    }
+
     public void demarrerPartie() {
         this.lettreCourante = genererLettre();
         this.enCours = true;
@@ -31,9 +38,13 @@ public class SessionJeu {
         // Génère une lettre majuscule entre A et Z
         return (char) (r.nextInt(26) + 'A');
     }
-    
+
     public void setLettreCourante(char lettre) {
         this.lettreCourante = lettre;
+    }
+
+    public void setTempsLimite(int tempsLimite) {
+        this.tempsLimite = tempsLimite;
     }
 
     // Getters

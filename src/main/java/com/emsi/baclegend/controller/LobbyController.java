@@ -3,9 +3,11 @@ package com.emsi.baclegend.controller;
 import com.emsi.baclegend.App;
 import com.emsi.baclegend.service.ServiceReseau;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
@@ -32,8 +34,40 @@ public class LobbyController {
     @FXML
     private Button btnStartGame;
 
+    @FXML
+    private ComboBox<String> comboTime;
+
     private boolean isHost = false;
     private Set<String> players = ConcurrentHashMap.newKeySet();
+
+    @FXML
+    public void initialize() {
+        // Initialize time options
+        comboTime.setItems(FXCollections.observableArrayList(
+                "30 secondes",
+                "45 secondes",
+                "60 secondes",
+                "90 secondes",
+                "120 secondes",
+                "180 secondes"));
+        comboTime.setValue("60 secondes");
+
+        // Style the combo box
+        comboTime.setStyle("-fx-background-color: rgba(15, 52, 96, 0.8); -fx-text-fill: white;");
+    }
+
+    private int getSelectedTime() {
+        String selected = comboTime.getValue();
+        if (selected == null)
+            return 60;
+        // Extract number from string like "60 secondes"
+        String[] parts = selected.split(" ");
+        try {
+            return Integer.parseInt(parts[0]);
+        } catch (NumberFormatException e) {
+            return 60;
+        }
+    }
 
     @FXML
     private void handleHost() {
@@ -45,6 +79,9 @@ public class LobbyController {
         isHost = true;
         players.clear();
         players.add(pseudo.trim());
+
+        // Set the game time from combo box
+        App.gameTimeDuration = getSelectedTime();
 
         App.networkService.setMyPseudo(pseudo.trim());
         setupNetworking();
@@ -76,8 +113,11 @@ public class LobbyController {
         String code = com.emsi.baclegend.util.CodeUtils.compress(ip, port);
 
         lblRoomCode.setText(code);
-        lblStatusHost.setText("Serveur démarré !");
-        lblStatusHost.setStyle("-fx-text-fill: #00ff87;");
+        lblStatusHost.setText("Serveur démarré ! Durée: " + getSelectedTime() + "s");
+        lblStatusHost.getStyleClass().add("success-text");
+
+        // Disable time selection after server started
+        comboTime.setDisable(true);
 
         updatePlayerListUI();
         btnStartGame.setVisible(true);
@@ -194,6 +234,15 @@ public class LobbyController {
                     players.add(p.trim());
             }
             updatePlayerListUI();
+        } else if (message.startsWith("TIME:")) {
+            // Received time from host
+            try {
+                int time = Integer.parseInt(message.substring(5).trim());
+                App.gameTimeDuration = time;
+                lblStatusJoin.setText("Durée de la manche: " + time + "s");
+            } catch (NumberFormatException e) {
+                // Ignore invalid time
+            }
         } else if (message.equals("START")) {
             goToGame();
         }
@@ -211,6 +260,7 @@ public class LobbyController {
         vboxPlayers.getChildren().clear();
         for (String p : players) {
             Label l = new Label(p);
+            l.getStyleClass().add("label");
             l.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
             vboxPlayers.getChildren().add(l);
         }
@@ -220,7 +270,9 @@ public class LobbyController {
     private void handleStartGame() {
         if (!isHost)
             return;
-        // Broadcast Start
+        // Broadcast time setting first
+        App.networkService.broadcast("TIME:" + App.gameTimeDuration);
+        // Then broadcast Start
         App.networkService.broadcast("START");
         goToGame();
     }

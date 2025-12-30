@@ -17,6 +17,9 @@ public class App extends Application {
     public static com.emsi.baclegend.service.ServiceReseau networkService = new com.emsi.baclegend.service.ServiceReseau();
     public static String currentUser = "Joueur" + (int) (Math.random() * 10000); // Default Unique ID
 
+    // Game settings
+    public static int gameTimeDuration = 60; // Default 60 seconds
+
     @Override
     public void start(Stage stage) throws IOException {
         // Initialiser la base de données dès le démarrage

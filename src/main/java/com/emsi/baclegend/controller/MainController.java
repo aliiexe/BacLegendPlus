@@ -53,6 +53,11 @@ public class MainController {
     }
 
     @FXML
+    private void handleSettings() throws IOException {
+        App.setRoot("view/settings");
+    }
+
+    @FXML
     private void handleQuit() {
         Platform.exit();
         System.exit(0);

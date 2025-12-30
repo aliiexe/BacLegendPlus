@@ -41,4 +41,33 @@ public class CategorieDAO {
             System.err.println("Erreur lors de l'ajout de la catégorie : " + e.getMessage());
         }
     }
+
+    public void modifier(Categorie categorie) {
+        String sql = "UPDATE categories SET nom = ? WHERE id = ?";
+
+        try (Connection conn = GestionnaireBaseDeDonnees.getConnexion();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, categorie.getNom());
+            pstmt.setInt(2, categorie.getId());
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la modification de la catégorie : " + e.getMessage());
+        }
+    }
+
+    public void supprimer(int id) {
+        String sql = "DELETE FROM categories WHERE id = ?";
+
+        try (Connection conn = GestionnaireBaseDeDonnees.getConnexion();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la suppression de la catégorie : " + e.getMessage());
+        }
+    }
 }

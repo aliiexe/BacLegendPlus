@@ -4,27 +4,23 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emsi.baclegend.controller.MainController" styleClass="root">
+<VBox alignment="CENTER" spacing="30.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emsi.baclegend.controller.MainController" styleClass="root">
    <children>
-      <Label text="BacLegend" styleClass="label-header">
-         <font>
-            <Font name="System Bold" size="48.0" />
-         </font>
-      </Label>
-      <Label text="Le jeu du petit bac ultime" styleClass="label" style="-fx-font-size: 18px; -fx-text-fill: #555;" />
+      <Label text="BacLegend" styleClass="label-header" />
+      <Label text="Le jeu du petit bac ultime" styleClass="label-subtitle" />
       
-      <VBox spacing="5" alignment="CENTER">
+      <VBox spacing="8" alignment="CENTER">
           <Label text="Votre Pseudo:" styleClass="label" />
           <TextField fx:id="txtPseudo" promptText="Entrez votre nom" maxWidth="300" styleClass="text-field" alignment="CENTER" />
       </VBox>
 
-      <VBox spacing="15" alignment="CENTER">
-          <Button fx:id="btnSolo" mnemonicParsing="false" onAction="#handleSolo" prefHeight="50.0" prefWidth="250.0" text="Mode Solo" styleClass="button" />
-          <Button fx:id="btnMulti" mnemonicParsing="false" onAction="#handleMulti" prefHeight="50.0" prefWidth="250.0" text="Multijoueur" styleClass="button" />
-          <Button fx:id="btnCategories" mnemonicParsing="false" onAction="#handleCategories" prefHeight="50.0" prefWidth="250.0" text="Gérer les Catégories" styleClass="button" />
-          <Button fx:id="btnQuit" mnemonicParsing="false" onAction="#handleQuit" prefHeight="50.0" prefWidth="250.0" text="Quitter" styleClass="button" style="-fx-background-color: #d32f2f;" />
+      <VBox spacing="12" alignment="CENTER">
+          <Button fx:id="btnSolo" mnemonicParsing="false" onAction="#handleSolo" prefHeight="50.0" prefWidth="280.0" text="Mode Solo" styleClass="button, button-primary" />
+          <Button fx:id="btnMulti" mnemonicParsing="false" onAction="#handleMulti" prefHeight="50.0" prefWidth="280.0" text="Multijoueur" styleClass="button" />
+          <Button fx:id="btnCategories" mnemonicParsing="false" onAction="#handleCategories" prefHeight="50.0" prefWidth="280.0" text="Gérer les Catégories" styleClass="button, button-secondary" />
+          <Button fx:id="btnSettings" mnemonicParsing="false" onAction="#handleSettings" prefHeight="50.0" prefWidth="280.0" text="⚙ Paramètres" styleClass="button, button-secondary" />
+          <Button fx:id="btnQuit" mnemonicParsing="false" onAction="#handleQuit" prefHeight="50.0" prefWidth="280.0" text="Quitter" styleClass="button, button-danger" />
       </VBox>
    </children>
 </VBox>
