@@ -36,7 +36,7 @@ public class ServiceValidation {
     }
 
     private String apiKey() {
-        return "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";
+        return "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";
     }
 
     private boolean validerMotAvecAI(String mot, Categorie categorie) {
