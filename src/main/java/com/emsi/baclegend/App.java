@@ -18,7 +18,9 @@ public class App extends Application {
     public static String currentUser = "Joueur" + (int) (Math.random() * 10000); // Default Unique ID
 
     // Game settings
+    // Game settings
     public static int gameTimeDuration = 60; // Default 60 seconds
+    public static Character sharedLetter = null;
 
     @Override
     public void start(Stage stage) throws IOException {

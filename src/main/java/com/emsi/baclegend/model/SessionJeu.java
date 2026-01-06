@@ -29,6 +29,11 @@ public class SessionJeu {
         this.enCours = true;
     }
 
+    public void demarrerPartie(char lettre) {
+        this.lettreCourante = lettre;
+        this.enCours = true;
+    }
+
     public void arreterPartie() {
         this.enCours = false;
     }

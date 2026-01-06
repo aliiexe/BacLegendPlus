@@ -81,7 +81,14 @@ public class GameController {
         if (isMultiplayer)
             setupMultiplayerCallbacks();
 
-        moteurJeu.demarrerNouvellePartie();
+        // Use shared letter if available (set by LobbyController)
+        if (App.sharedLetter != null) {
+            moteurJeu.demarrerNouvellePartie(App.sharedLetter);
+            App.sharedLetter = null; // Clear it
+        } else {
+            moteurJeu.demarrerNouvellePartie();
+        }
+
         startTimer();
         updateUI();
 

@@ -217,8 +217,25 @@ public class LobbyController {
         });
     }
 
+    @FXML
+    private void handleStartGame() {
+        if (!isHost)
+            return;
+        // Broadcast time setting first
+        App.networkService.broadcast("TIME:" + App.gameTimeDuration);
+
+        // Generate letter
+        char lettre = (char) ('A' + new java.util.Random().nextInt(26));
+        App.sharedLetter = lettre;
+
+        // Broadcast Start with letter
+        App.networkService.broadcast("START:" + lettre);
+        goToGame();
+    }
+
     private void handleMessage(String message) {
         if (message.startsWith("NAME:")) {
+            // ... (unchanged)
             String newName = message.substring(5).trim();
             if (isHost) {
                 players.add(newName);
@@ -227,6 +244,7 @@ public class LobbyController {
                     btnStartGame.setDisable(false);
             }
         } else if (message.startsWith("PLAYERS:")) {
+            // ... (unchanged)
             String list = message.substring(8);
             players.clear();
             for (String p : list.split(",")) {
@@ -235,7 +253,7 @@ public class LobbyController {
             }
             updatePlayerListUI();
         } else if (message.startsWith("TIME:")) {
-            // Received time from host
+            // ... (unchanged)
             try {
                 int time = Integer.parseInt(message.substring(5).trim());
                 App.gameTimeDuration = time;
@@ -243,7 +261,14 @@ public class LobbyController {
             } catch (NumberFormatException e) {
                 // Ignore invalid time
             }
-        } else if (message.equals("START")) {
+        } else if (message.startsWith("START")) {
+            // Handle START or START:X
+            if (message.contains(":")) {
+                String l = message.split(":")[1];
+                if (l.length() > 0) {
+                    App.sharedLetter = l.charAt(0);
+                }
+            }
             goToGame();
         }
     }
@@ -264,17 +289,6 @@ public class LobbyController {
             l.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
             vboxPlayers.getChildren().add(l);
         }
-    }
-
-    @FXML
-    private void handleStartGame() {
-        if (!isHost)
-            return;
-        // Broadcast time setting first
-        App.networkService.broadcast("TIME:" + App.gameTimeDuration);
-        // Then broadcast Start
-        App.networkService.broadcast("START");
-        goToGame();
     }
 
     private void goToGame() {

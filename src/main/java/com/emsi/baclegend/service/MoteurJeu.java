@@ -35,6 +35,15 @@ public class MoteurJeu {
         this.gameStopped = false; // Reset gameStopped when starting a new game
     }
 
+    public void demarrerNouvellePartie(char lettreImposee) {
+        List<Categorie> categories = categorieDAO.obtenirToutes();
+        this.sessionCourante = new SessionJeu(categories, App.gameTimeDuration);
+        this.sessionCourante.demarrerPartie(lettreImposee);
+        this.score = 0;
+        this.scoreAdversaire = 0;
+        this.gameStopped = false;
+    }
+
     public Map<String, Boolean> soumettreReponses(Map<Categorie, String> reponses) {
         Map<String, Boolean> resultats = new HashMap<>();
         if (sessionCourante == null) {
