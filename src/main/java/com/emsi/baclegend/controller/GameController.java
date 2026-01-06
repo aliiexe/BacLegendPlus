@@ -100,9 +100,17 @@ public class GameController {
     private void startNewRoundHost() {
         allSubmittedAnswers.clear();
         finishedPlayers.clear();
+
+        // Generate new letter locally first
+        moteurJeu.demarrerNouvellePartie();
         char lettre = moteurJeu.getSessionCourante().getLettreCourante();
         System.out.println("HOST: Starting round with letter " + lettre);
+
+        // Broadcast to clients
         App.networkService.broadcast("LETTER:" + lettre);
+
+        // Process locally immediately (Fix for Host waiting forever)
+        handleNetworkMessage("LETTER:" + lettre);
     }
 
     private void setupMultiplayerCallbacks() {
@@ -120,8 +128,35 @@ public class GameController {
             public void onConnectionFailed(String error) {
                 Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setContentText("Erreur réseau: " + error);
+                    alert.setContentText("Connexion perdue: " + error);
                     alert.showAndWait();
+                    try {
+                        handleRetour();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+
+            @Override
+            public void onClientDisconnected(String pseudo) {
+                Platform.runLater(() -> {
+                    if (isHost) {
+                        Alert alert = new Alert(Alert.AlertType.WARNING);
+                        alert.setContentText("Le joueur " + pseudo + " s'est déconnecté.");
+                        alert.show();
+
+                        if (App.networkService.getClientCount() == 0) {
+                            Alert end = new Alert(Alert.AlertType.INFORMATION);
+                            end.setContentText("Tous les joueurs sont partis. Fin de la partie.");
+                            end.showAndWait();
+                            try {
+                                handleRetour();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 });
             }
         });
@@ -148,6 +183,8 @@ public class GameController {
             if (!gameStopped) {
                 stopAndSubmit(false); // Auto-submit
             }
+            // Update overlay to show we are calculating/waiting
+            showWaitingOverlay("Calcul des résultats...");
         } else if (message.startsWith("SUBMIT:")) {
             if (isHost)
                 handleSubmission(message);
@@ -182,7 +219,10 @@ public class GameController {
 
             // CRITICAL: Host does not receive broadcast, so Host must stop manually.
             if (!gameStopped) {
-                Platform.runLater(() -> stopAndSubmit(false));
+                Platform.runLater(() -> {
+                    stopAndSubmit(false);
+                    showWaitingOverlay("Calcul des résultats...");
+                });
             }
         }
 
@@ -325,17 +365,17 @@ public class GameController {
         handleValiderHelper();
 
         if (isMultiplayer) {
-            showWaitingOverlay();
+            showWaitingOverlay("En attente des autres joueurs...");
         }
     }
 
-    private void showWaitingOverlay() {
+    private void showWaitingOverlay(String msg) {
         if (overlayResults == null)
             return;
         Platform.runLater(() -> {
             lblResultTitle.setText("EN ATTENTE...");
             txtResultDetails
-                    .setText("En attente des autres joueurs...\nLa manche se terminera quand tout le monde aura fini.");
+                    .setText(msg + "\nLa manche se terminera quand tout le monde aura fini.");
             if (btnNextRound != null)
                 btnNextRound.setVisible(false);
             overlayResults.setVisible(true);
@@ -494,8 +534,11 @@ public class GameController {
     private void handleRetour() throws IOException {
         if (countdown != null)
             countdown.stop();
-        if (isMultiplayer)
+        if (isMultiplayer) {
+            // If Host quits, close server (clients will get disconnected)
+            // If Client quits, close connection
             App.networkService.fermerConnexion();
+        }
         App.setRoot("view/main");
     }
 }

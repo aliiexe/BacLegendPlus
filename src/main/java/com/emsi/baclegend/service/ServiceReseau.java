@@ -35,6 +35,10 @@ public class ServiceReseau {
         void onConnectionEstablished();
 
         void onConnectionFailed(String error);
+
+        // New callback for disconnection
+        default void onClientDisconnected(String pseudo) {
+        }
     }
 
     public void setMessageCallback(MessageCallback callback) {
@@ -226,6 +230,7 @@ public class ServiceReseau {
         private Socket socket;
         private PrintWriter writer;
         private BufferedReader reader;
+        private String pseudo = "Unknown"; // Pseudo storage
 
         public ClientHandler(Socket socket) {
             this.socket = socket;
@@ -239,8 +244,12 @@ public class ServiceReseau {
 
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    // Update pseudo if we see NAME:
+                    if (line.startsWith("NAME:")) {
+                        this.pseudo = line.substring(5).trim();
+                    }
                     // Quand le serveur reçoit un message d'un client
-                    // On le passe au Controller via callback
+                    // On le passe au Controller
                     handleIncomingMessage(line);
                 }
             } catch (IOException e) {
@@ -248,6 +257,12 @@ public class ServiceReseau {
             } finally {
                 close();
                 clients.remove(this);
+                // Notify disconnection
+                if (messageCallback != null) {
+                    final String disconnectedPseudo = this.pseudo;
+                    javafx.application.Platform
+                            .runLater(() -> messageCallback.onClientDisconnected(disconnectedPseudo));
+                }
             }
         }
 
