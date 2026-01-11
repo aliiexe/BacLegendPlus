@@ -17,12 +17,12 @@ if ($portUsed) {
     Write-Host ""
     $portUsed | ForEach-Object {
         $parts = $_ -split '\s+'
-        $pid = $parts[-1]
+        $procId = $parts[-1]
         
-        if ($pid -match '^\d+$') {
-            Write-Host "Arrêt du processus PID: $pid" -ForegroundColor Yellow
-            taskkill /PID $pid /F 2>$null | Out-Null
-            Write-Host "  OK: Processus $pid terminé" -ForegroundColor Green
+        if ($procId -match '^\d+$') {
+            Write-Host "Arrêt du processus PID: $procId" -ForegroundColor Yellow
+            taskkill /PID $procId /F 2>$null | Out-Null
+            Write-Host "  OK: Processus $procId terminé" -ForegroundColor Green
         }
     }
     
@@ -32,11 +32,13 @@ if ($portUsed) {
     if (-not $stillUsed) {
         Write-Host ""
         Write-Host "SUCCESS: Port 12345 libéré!" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host ""
         Write-Host "WARNING: Le port est toujours utilisé" -ForegroundColor Red
     }
-} else {
+}
+else {
     Write-Host "OK: Le port 12345 est déjà libre!" -ForegroundColor Green
 }
 
