@@ -99,7 +99,7 @@ public class ServiceValidation {
             return envKey;
         }
         // Fallback to hardcoded key (may be invalid/expired)
-        return "";
+        return "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";
     }
 
     private boolean validerMotAvecAI(String mot, Categorie categorie) {

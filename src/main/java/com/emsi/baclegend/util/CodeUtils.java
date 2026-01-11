@@ -2,15 +2,19 @@ package com.emsi.baclegend.util;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Random;
 
 public class CodeUtils {
 
+    private static final Random random = new Random();
+    private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude confusing chars like 0, O, I, 1
+
     /**
      * Compresse une adresse IP (ex: 192.168.1.15) et un port (ex: 5000)
-     * en une chaîne courte de caractères (Base64 URL-safe).
+     * en une chaîne courte de caractères (Base64 URL-safe) avec un suffixe aléatoire unique.
      * Format:
-     * - Si IPv4: 4 bytes IP + 2 bytes Port = 6 bytes. Base64(6) ~= 8 chars.
-     * - Si IPv6 ou autre: Fallback sur l'encodage classique plus long.
+     * - Si IPv4: 4 bytes IP + 2 bytes Port = 6 bytes. Base64(6) ~= 8 chars + 4 random chars = 12 chars total.
+     * - Si IPv6 ou autre: Fallback sur l'encodage classique plus long + 4 random chars.
      */
     public static String compress(String ip, int port) {
         try {
@@ -28,20 +32,40 @@ public class CodeUtils {
 
                 // Encode Base64 without padding for brevity
                 String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(data);
-                return encoded;
+                // Add random 4-character suffix to make each code unique
+                String randomSuffix = generateRandomSuffix();
+                return encoded + randomSuffix;
             }
         } catch (Exception ignored) {
             // Fallback
         }
-        // Fallback: encode full string
-        return Base64.getUrlEncoder().withoutPadding().encodeToString((ip + ":" + port).getBytes());
+        // Fallback: encode full string + random suffix
+        String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString((ip + ":" + port).getBytes());
+        String randomSuffix = generateRandomSuffix();
+        return encoded + randomSuffix;
     }
 
     /**
-     * Décompresse un code court (ex: "wKgBexNM") en "IP:Port".
+     * Generates a random 4-character suffix to make codes unique
+     */
+    private static String generateRandomSuffix() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 4; i++) {
+            sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Décompresse un code court (ex: "wKgBexNMABCD") en "IP:Port".
+     * Removes the random 4-character suffix before decoding.
      */
     public static String decompress(String code) {
         try {
+            // Remove the last 4 characters (random suffix) before decoding
+            if (code.length() >= 4) {
+                code = code.substring(0, code.length() - 4);
+            }
             byte[] data = Base64.getUrlDecoder().decode(code);
 
             // If 6 bytes, it's our IPv4 condensed format

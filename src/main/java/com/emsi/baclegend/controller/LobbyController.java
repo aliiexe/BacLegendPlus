@@ -14,6 +14,9 @@ import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -110,12 +113,7 @@ public class LobbyController {
 
         port = App.networkService.getLocalPort();
 
-        String ip;
-        try {
-            ip = InetAddress.getLocalHost().getHostAddress();
-        } catch (Exception e) {
-            ip = "127.0.0.1";
-        }
+        String ip = getLocalNetworkIP();
 
         // Use Short Code Compression
         String code = com.emsi.baclegend.util.CodeUtils.compress(ip, port);
@@ -341,5 +339,53 @@ public class LobbyController {
     private void handleRetour() throws IOException {
         App.networkService.fermerConnexion();
         App.setRoot("view/main");
+    }
+
+    /**
+     * Gets the local network IP address (not localhost) for LAN connections.
+     * Returns the first non-loopback, non-link-local IPv4 address found.
+     * Falls back to localhost if no network interface is found.
+     */
+    private String getLocalNetworkIP() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = interfaces.nextElement();
+                
+                // Skip loopback and inactive interfaces
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+                
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress address = addresses.nextElement();
+                    
+                    // Skip loopback and link-local addresses
+                    if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+                        continue;
+                    }
+                    
+                    // Prefer IPv4 addresses (for LAN compatibility)
+                    if (address.getHostAddress().contains(".") && !address.getHostAddress().startsWith("127.")) {
+                        String ip = address.getHostAddress();
+                        System.out.println("Found network IP: " + ip + " on interface: " + networkInterface.getName());
+                        return ip;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            System.err.println("Error finding network IP: " + e.getMessage());
+        }
+        
+        // Fallback to localhost if no network interface found
+        try {
+            String localhost = InetAddress.getLocalHost().getHostAddress();
+            System.out.println("Using localhost IP: " + localhost);
+            return localhost;
+        } catch (Exception e) {
+            System.err.println("Error getting localhost IP: " + e.getMessage());
+            return "127.0.0.1";
+        }
     }
 }
