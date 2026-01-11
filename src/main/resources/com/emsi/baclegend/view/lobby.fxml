@@ -16,7 +16,7 @@
           <!-- HOST CARD -->
           <VBox alignment="CENTER" spacing="16.0" styleClass="game-card" prefWidth="340">
              <children>
-                <Label text="CRÉER UNE PARTIE" styleClass="label-title"/>
+                <Label text="🏠 CRÉER UNE PARTIE" styleClass="label-title"/>
                 <Label text="(Vous serez l'hôte)" styleClass="label-muted" />
                 
                 <!-- Time Selection for Host -->
@@ -25,7 +25,13 @@
                     <ComboBox fx:id="comboTime" prefWidth="180" />
                 </VBox>
                 
-                <Button mnemonicParsing="false" onAction="#handleHost" text="Créer le Serveur" styleClass="button, button-primary" />
+                <!-- Language Selection for Host -->
+                <VBox spacing="8" alignment="CENTER">
+                    <Label text="Langue du jeu:" styleClass="label" />
+                    <ComboBox fx:id="comboLanguage" prefWidth="180" />
+                </VBox>
+                
+                <Button mnemonicParsing="false" onAction="#handleHost" text="🚀 Créer le Serveur" styleClass="button, button-primary" prefHeight="50" />
                 
                 <VBox alignment="CENTER" spacing="8">
                     <HBox alignment="CENTER" spacing="12">
@@ -40,11 +46,11 @@
           <!-- JOIN CARD -->
           <VBox alignment="CENTER" spacing="16.0" styleClass="game-card" prefWidth="340">
              <children>
-                <Label text="REJOINDRE" styleClass="label-title, success-text"/>
+                <Label text="🔗 REJOINDRE" styleClass="label-title, success-text"/>
                 <Label text="(Entrez le code de l'hôte)" styleClass="label-muted" />
                 
                 <TextField fx:id="txtCode" promptText="Code de la salle" styleClass="text-field" alignment="CENTER" maxWidth="200" />
-                <Button mnemonicParsing="false" onAction="#handleJoin" text="Rejoindre" styleClass="button, button-success" />
+                <Button mnemonicParsing="false" onAction="#handleJoin" text="✅ Rejoindre" styleClass="button, button-success" prefHeight="50" />
                 
                 <Label fx:id="lblStatusJoin" wrapText="true" textAlignment="CENTER" styleClass="label" />
              </children>
@@ -54,10 +60,10 @@
       <VBox alignment="CENTER" spacing="12" styleClass="game-card" maxWidth="700">
            <Label text="JOUEURS CONNECTÉS" styleClass="label-muted"/>
            <VBox fx:id="vboxPlayers" alignment="CENTER" spacing="8" />
-           <Button fx:id="btnStartGame" onAction="#handleStartGame" text="LANCER LA PARTIE" visible="false" styleClass="button, button-success" />
+           <Button fx:id="btnStartGame" onAction="#handleStartGame" text="🎯 LANCER LA PARTIE" visible="false" styleClass="button, button-success" prefHeight="60" prefWidth="300" style="-fx-font-size: 18px; -fx-font-weight: 900;" />
       </VBox>
       
-      <Button mnemonicParsing="false" onAction="#handleRetour" text="← Retour" styleClass="button, button-secondary" />
+      <Button mnemonicParsing="false" onAction="#handleRetour" text="⬅️ Retour" styleClass="button, button-secondary" prefHeight="50" />
    </children>
    <padding>
       <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />

@@ -190,6 +190,7 @@ public class ServiceReseau {
         if (msg.startsWith("NAME:")) {
             opponentPseudo = msg.substring(5).trim();
         }
+        // Pass all messages including DISCONNECT to callback
         if (messageCallback != null) {
             messageCallback.onMessageReceived(msg);
         }
@@ -247,6 +248,13 @@ public class ServiceReseau {
                     // Update pseudo if we see NAME:
                     if (line.startsWith("NAME:")) {
                         this.pseudo = line.substring(5).trim();
+                    }
+                    // Handle explicit disconnect message - send to controller first, then break
+                    if (line.startsWith("DISCONNECT:")) {
+                        // Pass the disconnect message to controller so it can handle it
+                        handleIncomingMessage(line);
+                        // Then break to trigger disconnection cleanup
+                        break;
                     }
                     // Quand le serveur reçoit un message d'un client
                     // On le passe au Controller

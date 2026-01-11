@@ -56,11 +56,29 @@ public class MoteurJeu {
             Categorie cat = entry.getKey();
             String mot = entry.getValue() != null ? entry.getValue().trim() : "";
             boolean estValide = false;
-            if (!mot.isEmpty() && Character.toUpperCase(mot.charAt(0)) == Character.toUpperCase(lettre)) {
+            
+            System.out.println("MOTEUR JEU: Validating word='" + mot + "', category='" + cat.getNom() + "', letter=" + lettre);
+            
+            if (mot.isEmpty()) {
+                System.out.println("MOTEUR JEU: Word is empty, skipping");
+                resultats.put(cat.getNom(), false);
+                continue;
+            }
+            
+            char firstChar = Character.toUpperCase(mot.charAt(0));
+            char targetLetter = Character.toUpperCase(lettre);
+            
+            if (firstChar == targetLetter) {
+                System.out.println("MOTEUR JEU: First letter matches (" + firstChar + "), calling validation...");
                 if (serviceValidation.validerMot(mot, cat)) {
                     estValide = true;
                     this.score += 10;
+                    System.out.println("MOTEUR JEU: Word validated! Score now: " + this.score);
+                } else {
+                    System.out.println("MOTEUR JEU: Word validation failed");
                 }
+            } else {
+                System.out.println("MOTEUR JEU: First letter mismatch: word starts with '" + firstChar + "', required '" + targetLetter + "'");
             }
             resultats.put(cat.getNom(), estValide);
         }

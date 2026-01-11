@@ -37,6 +37,9 @@ public class LobbyController {
     @FXML
     private ComboBox<String> comboTime;
 
+    @FXML
+    private ComboBox<String> comboLanguage;
+
     private boolean isHost = false;
     private Set<String> players = ConcurrentHashMap.newKeySet();
 
@@ -54,6 +57,11 @@ public class LobbyController {
 
         // Style the combo box
         comboTime.setStyle("-fx-background-color: rgba(15, 52, 96, 0.8); -fx-text-fill: white;");
+
+        // Initialize language options
+        comboLanguage.setItems(FXCollections.observableArrayList("Français", "English"));
+        comboLanguage.setValue("Français"); // Default to French
+        comboLanguage.setStyle("-fx-background-color: rgba(15, 52, 96, 0.8); -fx-text-fill: white;");
     }
 
     private int getSelectedTime() {
@@ -116,8 +124,9 @@ public class LobbyController {
         lblStatusHost.setText("Serveur démarré ! Durée: " + getSelectedTime() + "s");
         lblStatusHost.getStyleClass().add("success-text");
 
-        // Disable time selection after server started
+        // Disable time and language selection after server started
         comboTime.setDisable(true);
+        comboLanguage.setDisable(true);
 
         updatePlayerListUI();
         btnStartGame.setVisible(true);
@@ -221,8 +230,26 @@ public class LobbyController {
     private void handleStartGame() {
         if (!isHost)
             return;
+        
+        // Set language preference from host selection
+        String selectedLang = comboLanguage.getValue();
+        if (selectedLang != null) {
+            if (selectedLang.equals("Français")) {
+                App.gameLanguage = "FR";
+            } else {
+                App.gameLanguage = "EN";
+            }
+        }
+        
         // Broadcast time setting first
         App.networkService.broadcast("TIME:" + App.gameTimeDuration);
+        
+        // Broadcast language setting
+        App.networkService.broadcast("LANGUAGE:" + App.gameLanguage);
+        
+        // Show language notification to all players
+        String langDisplay = App.gameLanguage.equals("FR") ? "Français" : "English";
+        App.networkService.broadcast("LANGUAGE_NOTIFICATION:" + langDisplay);
 
         // Generate letter
         char lettre = (char) ('A' + new java.util.Random().nextInt(26));
@@ -261,6 +288,15 @@ public class LobbyController {
             } catch (NumberFormatException e) {
                 // Ignore invalid time
             }
+        } else if (message.startsWith("LANGUAGE:")) {
+            // Receive language setting from host
+            String lang = message.substring(9).trim();
+            App.gameLanguage = lang;
+            String langDisplay = lang.equals("FR") ? "Français" : "English";
+            lblStatusJoin.setText("Langue: " + langDisplay);
+        } else if (message.startsWith("LANGUAGE_NOTIFICATION:")) {
+            // Language notification - will be handled in GameController
+            // No action needed here
         } else if (message.startsWith("START")) {
             // Handle START or START:X
             if (message.contains(":")) {

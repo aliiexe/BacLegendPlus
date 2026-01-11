@@ -1,0 +1,4 @@
+Add language selection, dark theme UI overhaul, multiplayer improvements, and validation fixes
+
+Implemented comprehensive language support (French/English) for both solo and multiplayer modes with full UI translation including categories, added a modern dark theme UI inspired by Gartic Phone with animations and improved UX, fixed multiplayer disconnection handling to properly notify players and exclude disconnected players from score calculations, created a TranslationUtil system for centralized translations, fixed validation issues in both AI and database checks with proper error handling and fallback validation when API key is invalid, resolved score calculation bugs in multiplayer by fixing category name matching in validation cache and dupeMap, added countdown animation to solo mode to match multiplayer experience, and improved API key management with automatic re-enabling when validation succeeds.
+

@@ -6,24 +6,30 @@ import java.sql.*;
 public class MotDAO {
 
     public Mot trouverParContenu(String contenu, int categorieId) {
-        String sql = "SELECT * FROM mots WHERE LOWER(contenu) = LOWER(?) AND categorie_id = ?";
+        String sql = "SELECT * FROM mots WHERE LOWER(TRIM(contenu)) = LOWER(TRIM(?)) AND categorie_id = ?";
 
         try (Connection conn = GestionnaireBaseDeDonnees.getConnexion();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, contenu.trim());
+            String normalized = contenu.trim().toLowerCase();
+            pstmt.setString(1, normalized);
             pstmt.setInt(2, categorieId);
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                return new Mot(
+                Mot found = new Mot(
                         rs.getInt("id"),
                         rs.getString("contenu"),
                         rs.getInt("categorie_id"),
                         rs.getInt("est_valide") == 1);
+                System.out.println("DATABASE: Found word='" + found.getContenu() + "', valid=" + found.isEstValide());
+                return found;
+            } else {
+                System.out.println("DATABASE: Word not found: '" + normalized + "' for category_id=" + categorieId);
             }
         } catch (SQLException e) {
             System.err.println("Erreur lors de la recherche du mot : " + e.getMessage());
+            e.printStackTrace();
         }
         return null;
     }

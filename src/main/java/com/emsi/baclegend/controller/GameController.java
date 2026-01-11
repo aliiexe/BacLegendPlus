@@ -5,10 +5,13 @@ import com.emsi.baclegend.dao.ScoreDAO;
 import com.emsi.baclegend.model.Categorie;
 import com.emsi.baclegend.service.MoteurJeu;
 import com.emsi.baclegend.service.ServiceReseau;
+import com.emsi.baclegend.util.TranslationUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.animation.ScaleTransition;
+import javafx.animation.FadeTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -48,6 +51,28 @@ public class GameController {
     private Button btnNextRound;
     @FXML
     private Label lblWaiting;
+    @FXML
+    private VBox notificationArea;
+    @FXML
+    private Label lblCountdown;
+    @FXML
+    private javafx.scene.layout.StackPane countdownOverlay;
+    @FXML
+    private Label lblLetterLabel;
+    @FXML
+    private Label lblTimeLabel;
+    @FXML
+    private Label lblScoreLabel;
+    @FXML
+    private Label lblLanguage;
+    @FXML
+    private Label lblLanguageLabel;
+    @FXML
+    private VBox vboxLanguage;
+    @FXML
+    private Button btnQuit;
+    @FXML
+    private Button btnQuitOverlay;
 
     // Deprecated but optional to keep for FXML compatibility if needed
     @FXML
@@ -62,10 +87,12 @@ public class GameController {
 
     private Timeline countdown;
     private boolean gameStopped = false; // Input frozen
+    private boolean roundOver = false;
 
     // Multiplayer Host Logic
     private Map<String, Map<String, String>> allSubmittedAnswers = new ConcurrentHashMap<>();
     private Set<String> finishedPlayers = Collections.synchronizedSet(new HashSet<>());
+    private Set<String> disconnectedPlayers = Collections.synchronizedSet(new HashSet<>());
     private Gson gson = new Gson();
 
     @FXML
@@ -89,17 +116,52 @@ public class GameController {
             moteurJeu.demarrerNouvellePartie();
         }
 
-        startTimer();
-        updateUI();
+        updateTranslations();
 
         if (isMultiplayer && isHost) {
             startNewRoundHost();
+        } else {
+            // Solo mode: start with countdown
+            char lettre = moteurJeu.getSessionCourante().getLettreCourante();
+            runCountdown(lettre);
         }
+    }
+    
+    private void updateTranslations() {
+        Platform.runLater(() -> {
+            if (lblLetterLabel != null)
+                lblLetterLabel.setText("🔤 " + TranslationUtil.translate("game.letter"));
+            if (lblTimeLabel != null)
+                lblTimeLabel.setText("⏱️ " + TranslationUtil.translate("game.time"));
+            if (lblScoreLabel != null)
+                lblScoreLabel.setText("⭐ " + TranslationUtil.translate("game.score"));
+            if (btnValider != null)
+                btnValider.setText("✅ " + TranslationUtil.translate("game.validate"));
+            if (btnQuit != null)
+                btnQuit.setText("❌ " + TranslationUtil.translate("game.quit"));
+            if (btnQuitOverlay != null)
+                btnQuitOverlay.setText("❌ " + TranslationUtil.translate("game.quit"));
+            if (btnNextRound != null)
+                btnNextRound.setText("➡️ " + TranslationUtil.translate("game.nextRound"));
+            if (lblLanguage != null)
+                lblLanguage.setText(TranslationUtil.getLanguageDisplayName());
+            if (lblLanguageLabel != null)
+                lblLanguageLabel.setText("🌐 " + TranslationUtil.translate("game.language"));
+            // Show language indicator only in multiplayer
+            if (vboxLanguage != null)
+                vboxLanguage.setVisible(isMultiplayer);
+            
+            // Regenerate category fields to update translated labels
+            if (moteurJeu != null && moteurJeu.getSessionCourante() != null) {
+                genererChampsSaisie();
+            }
+        });
     }
 
     private void startNewRoundHost() {
         allSubmittedAnswers.clear();
         finishedPlayers.clear();
+        // Keep disconnectedPlayers to prevent re-notification
 
         // Generate new letter locally first
         moteurJeu.demarrerNouvellePartie();
@@ -109,7 +171,7 @@ public class GameController {
         // Broadcast to clients
         App.networkService.broadcast("LETTER:" + lettre);
 
-        // Process locally immediately (Fix for Host waiting forever)
+        // Process locally immediately (Host also sees countdown)
         handleNetworkMessage("LETTER:" + lettre);
     }
 
@@ -127,11 +189,18 @@ public class GameController {
             @Override
             public void onConnectionFailed(String error) {
                 Platform.runLater(() -> {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setContentText("Connexion perdue: " + error);
+                    // If connection failed, it might be because the other player left in a 2-player game
+                    // Show appropriate message
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle(TranslationUtil.translate("game.quit"));
+                    alert.setHeaderText(null);
+                    alert.setContentText(TranslationUtil.translate("game.ended.solo"));
                     alert.showAndWait();
                     try {
-                        handleRetour();
+                        if (countdown != null)
+                            countdown.stop();
+                        App.networkService.fermerConnexion();
+                        App.setRoot("view/main");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -141,22 +210,43 @@ public class GameController {
             @Override
             public void onClientDisconnected(String pseudo) {
                 Platform.runLater(() -> {
-                    if (isHost) {
-                        Alert alert = new Alert(Alert.AlertType.WARNING);
-                        alert.setContentText("Le joueur " + pseudo + " s'est déconnecté.");
-                        alert.show();
+                    // Skip if we've already handled this disconnection
+                    if (disconnectedPlayers.contains(pseudo)) {
+                        return;
+                    }
+                    disconnectedPlayers.add(pseudo);
 
-                        if (App.networkService.getClientCount() == 0) {
-                            Alert end = new Alert(Alert.AlertType.INFORMATION);
-                            end.setContentText("Tous les joueurs sont partis. Fin de la partie.");
-                            end.showAndWait();
-                            try {
-                                handleRetour();
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                    // Show non-blocking notification to all players
+                    showNotification(TranslationUtil.translate("player.left", pseudo));
+
+                    if (isHost) {
+                        // Remove player from tracking
+                        allSubmittedAnswers.remove(pseudo);
+                        finishedPlayers.remove(pseudo);
+
+                        // Broadcast disconnect to all clients so they also show notification
+                        App.networkService.broadcast("PLAYER_DISCONNECTED:" + pseudo);
+
+                        // Recalculate total players (excluding disconnected ones)
+                        int connected = App.networkService.getClientCount();
+                        int total = connected + 1; // +1 for Host
+
+                        // If only 2 players total and one left, end the game
+                        if (total == 1) {
+                            // Only host remains - end the game
+                            endGameForSoloPlayer();
+                            return;
+                        }
+
+                        // If we're waiting for results and all remaining players have finished
+                        if (gameStopped && !roundOver) {
+                            if (finishedPlayers.size() >= total && total > 1) {
+                                // Everyone remaining has finished, calculate results
+                                calculateAndBroadcastResults();
                             }
                         }
                     }
+                    // Client side: if host disconnects or connection is lost, onConnectionFailed will handle it
                 });
             }
         });
@@ -169,16 +259,33 @@ public class GameController {
                 moteurJeu.getSessionCourante().setLettreCourante(lettre);
                 lblLettre.setText(String.valueOf(lettre));
 
-                // Close overlay if open
                 if (overlayResults != null)
                     overlayResults.setVisible(false);
 
                 gameStopped = false;
-                if (btnValider != null)
-                    btnValider.setDisable(false);
-                startTimer();
-                updateUI();
+                roundOver = false;
+
+                // Start Countdown instead of starting timer immediately
+                runCountdown(lettre);
             }
+        } else if (message.equals("SERVER_STOP")) {
+            Platform.runLater(() -> {
+                // Host stopped the game - this could be because only 2 players and one left
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle(TranslationUtil.translate("game.quit"));
+                alert.setHeaderText(null);
+                alert.setContentText(TranslationUtil.translate("game.ended.solo"));
+                alert.showAndWait();
+                try {
+                    // Force quiet return
+                    if (countdown != null)
+                        countdown.stop();
+                    App.networkService.fermerConnexion();
+                    App.setRoot("view/main");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         } else if (message.equals("STOP")) {
             if (!gameStopped) {
                 stopAndSubmit(false); // Auto-submit
@@ -189,7 +296,78 @@ public class GameController {
             if (isHost)
                 handleSubmission(message);
         } else if (message.startsWith("RESULTS:")) {
+            roundOver = true;
             showScoreboardOverlay(message.substring(8), true);
+        } else if (message.startsWith("PLAYER_DISCONNECTED:")) {
+            // Client receives notification that another player disconnected
+            String disconnectedPseudo = message.substring(20);
+            showNotification(TranslationUtil.translate("player.left", disconnectedPseudo));
+            
+            // Check if we're now alone (only host + this client = 2, if one left, we're alone)
+            // As a client, we can't know exact count, but if host sends GAME_ENDED_SOLO, we'll handle it
+        } else if (message.equals("GAME_ENDED_SOLO")) {
+            // Host ended the game because only one player remains
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle(TranslationUtil.translate("game.quit"));
+                alert.setHeaderText(null);
+                alert.setContentText(TranslationUtil.translate("game.ended.solo"));
+                alert.showAndWait();
+                try {
+                    if (countdown != null)
+                        countdown.stop();
+                    App.networkService.fermerConnexion();
+                    App.setRoot("view/main");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else if (message.startsWith("LANGUAGE_NOTIFICATION:")) {
+            // Show language notification
+            String langDisplay = message.substring(22);
+            showNotification("🌐 " + TranslationUtil.translate("game.language") + ": " + langDisplay);
+            // Update language display
+            if (lblLanguage != null) {
+                lblLanguage.setText(langDisplay);
+            }
+            // Refresh translations
+            updateTranslations();
+        } else if (message.startsWith("DISCONNECT:")) {
+            // Host receives explicit disconnect message from client
+            String disconnectedPseudo = message.substring(11);
+            // Mark as disconnected and trigger handler
+            disconnectedPlayers.add(disconnectedPseudo);
+            // Trigger the disconnection handler (same logic as onClientDisconnected)
+            Platform.runLater(() -> {
+                showNotification(TranslationUtil.translate("player.left", disconnectedPseudo));
+                
+                if (isHost) {
+                    // Remove player from tracking
+                    allSubmittedAnswers.remove(disconnectedPseudo);
+                    finishedPlayers.remove(disconnectedPseudo);
+                    
+                    // Broadcast disconnect to all clients
+                    App.networkService.broadcast("PLAYER_DISCONNECTED:" + disconnectedPseudo);
+                    
+                    // Recalculate total players
+                    int connected = App.networkService.getClientCount();
+                    int total = connected + 1; // +1 for Host
+                    
+                    // If only 2 players total and one left, end the game
+                    if (total == 1) {
+                        // Only host remains - end the game
+                        endGameForSoloPlayer();
+                        return;
+                    }
+                    
+                    // If we're waiting for results and all remaining players have finished
+                    if (gameStopped && !roundOver) {
+                        if (finishedPlayers.size() >= total && total > 1) {
+                            calculateAndBroadcastResults();
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -221,95 +399,166 @@ public class GameController {
             if (!gameStopped) {
                 Platform.runLater(() -> {
                     stopAndSubmit(false);
-                    showWaitingOverlay("Calcul des résultats...");
+                    // showWaitingOverlay("Calcul des résultats..."); // Removed to avoid race
+                    // condition
                 });
             }
         }
 
+        // Recalculate total players dynamically (in case someone disconnected)
         int connectedClients = App.networkService.getClientCount();
         int totalPlayers = connectedClients + 1; // +1 for Host
 
-        if (finishedPlayers.size() >= totalPlayers) {
+        // Only calculate if we have at least 2 players (host + at least 1 client)
+        // and all remaining players have finished
+        if (totalPlayers >= 2 && finishedPlayers.size() >= totalPlayers) {
             calculateAndBroadcastResults();
+        } else if (totalPlayers == 1) {
+            // Only host remains, show notification
+            Platform.runLater(() -> {
+                showNotification("Tous les joueurs sont partis.");
+            });
         }
     }
 
     private void calculateAndBroadcastResults() {
-        Map<String, Integer> scores = new HashMap<>();
-        Map<String, Boolean> validationCache = new HashMap<>();
-        Map<String, Map<String, List<String>>> dupeMap = new HashMap<>();
+        // Show loading state immediately on UI thread
+        Platform.runLater(() -> showWaitingOverlay(TranslationUtil.translate("game.calculating")));
 
-        // 1. Validate all words
-        for (String pseudo : allSubmittedAnswers.keySet()) {
-            scores.put(pseudo, 0);
-            Map<String, String> userAns = allSubmittedAnswers.get(pseudo);
+        new Thread(() -> {
+            Map<String, Integer> scores = new HashMap<>();
+            Map<String, Boolean> validationCache = new HashMap<>();
+            Map<String, Map<String, List<String>>> dupeMap = new HashMap<>();
 
-            for (Map.Entry<String, String> entry : userAns.entrySet()) {
-                String catName = entry.getKey();
-                String word = entry.getValue().toLowerCase().trim();
-                if (word.isEmpty())
-                    continue;
+            // 1. Validate all words (Heavy Operation)
+            for (String pseudo : allSubmittedAnswers.keySet()) {
+                scores.put(pseudo, 0);
+                Map<String, String> userAns = allSubmittedAnswers.get(pseudo);
 
-                Categorie catObj = moteurJeu.getSessionCourante().getCategories().stream()
-                        .filter(c -> c.getNom().equals(catName))
-                        .findFirst().orElse(null);
-                if (catObj == null)
-                    continue;
+                for (Map.Entry<String, String> entry : userAns.entrySet()) {
+                    String catName = entry.getKey();
+                    String word = entry.getValue().toLowerCase().trim();
+                    if (word.isEmpty())
+                        continue;
 
-                boolean isValid;
-                String key = word + "|" + catName;
-                if (validationCache.containsKey(key)) {
-                    isValid = validationCache.get(key);
-                } else {
-                    char currentLetter = moteurJeu.getSessionCourante().getLettreCourante();
-                    if (word.length() > 0
-                            && Character.toUpperCase(word.charAt(0)) == Character.toUpperCase(currentLetter)) {
-                        com.emsi.baclegend.service.ServiceValidation sv = new com.emsi.baclegend.service.ServiceValidation();
-                        isValid = sv.validerMot(word, catObj);
-                    } else {
-                        isValid = false;
+                    // Find category - try exact match first, then try reverse translation
+                    Categorie catObj = moteurJeu.getSessionCourante().getCategories().stream()
+                            .filter(c -> {
+                                String originalName = c.getNom().trim();
+                                String translatedName = TranslationUtil.translateCategory(originalName);
+                                return originalName.equalsIgnoreCase(catName.trim()) || 
+                                       translatedName.equalsIgnoreCase(catName.trim());
+                            })
+                            .findFirst().orElse(null);
+                    if (catObj == null) {
+                        System.out.println("HOST VALIDATION: Category not found: '" + catName + "'. Available categories: " + 
+                            moteurJeu.getSessionCourante().getCategories().stream()
+                                .map(c -> c.getNom() + "/" + TranslationUtil.translateCategory(c.getNom()))
+                                .reduce((a, b) -> a + ", " + b).orElse("none"));
+                        continue;
                     }
-                    validationCache.put(key, isValid);
-                }
 
-                if (isValid) {
-                    dupeMap.putIfAbsent(catName, new HashMap<>());
-                    dupeMap.get(catName).putIfAbsent(word, new ArrayList<>());
-                    dupeMap.get(catName).get(word).add(pseudo);
+                    boolean isValid;
+                    // Use original category name for cache key (not translated)
+                    String originalCatName = catObj.getNom();
+                    String key = word + "|" + originalCatName + "|" + App.gameLanguage;
+                    
+                    System.out.println("HOST VALIDATION: Checking cache for key: " + key);
+                    if (validationCache.containsKey(key)) {
+                        isValid = validationCache.get(key);
+                        System.out.println("HOST VALIDATION: Found in cache: " + isValid);
+                    } else {
+                        char currentLetter = moteurJeu.getSessionCourante().getLettreCourante();
+                        if (word.length() > 0
+                                && Character.toUpperCase(word.charAt(0)) == Character.toUpperCase(currentLetter)) {
+                            System.out.println("HOST VALIDATION: First letter matches, calling validation service...");
+                            // Instantiate new ServiceValidation for thread safety if valid
+                            com.emsi.baclegend.service.ServiceValidation sv = new com.emsi.baclegend.service.ServiceValidation();
+                            isValid = sv.validerMot(word, catObj);
+                            System.out.println("HOST VALIDATION: '" + word + "' in '" + originalCatName + "' (lang: " + App.gameLanguage + ") -> " + isValid);
+                            validationCache.put(key, isValid);
+                        } else {
+                            System.out.println("HOST VALIDATION: Invalid start match: word='" + word + "', letter='"
+                                    + currentLetter + "'");
+                            isValid = false;
+                            validationCache.put(key, false);
+                        }
+                    }
+
+                    if (isValid) {
+                        // Use original category name for dupeMap to match score calculation lookup
+                        dupeMap.putIfAbsent(originalCatName, new HashMap<>());
+                        dupeMap.get(originalCatName).putIfAbsent(word, new ArrayList<>());
+                        dupeMap.get(originalCatName).get(word).add(pseudo);
+                    }
                 }
             }
-        }
 
-        // 2. Calculate scores (with duplicate penalty)
-        for (String pseudo : allSubmittedAnswers.keySet()) {
-            int score = 0;
-            Map<String, String> userAns = allSubmittedAnswers.get(pseudo);
-            for (Map.Entry<String, String> entry : userAns.entrySet()) {
-                String catName = entry.getKey();
-                String word = entry.getValue().toLowerCase().trim();
-                if (word.isEmpty())
-                    continue;
+            // 2. Calculate scores (with duplicate penalty)
+            for (String pseudo : allSubmittedAnswers.keySet()) {
+                int score = 0;
+                Map<String, String> userAns = allSubmittedAnswers.get(pseudo);
+                for (Map.Entry<String, String> entry : userAns.entrySet()) {
+                    String catName = entry.getKey();
+                    String word = entry.getValue().toLowerCase().trim();
+                    if (word.isEmpty())
+                        continue;
 
-                String key = word + "|" + catName;
-                if (!validationCache.getOrDefault(key, false))
-                    continue;
+                    // Find the category object (catName might be translated)
+                    Categorie catObj = moteurJeu.getSessionCourante().getCategories().stream()
+                            .filter(c -> {
+                                String originalName = c.getNom().trim();
+                                String translatedName = TranslationUtil.translateCategory(originalName);
+                                return originalName.equalsIgnoreCase(catName.trim()) || 
+                                       translatedName.equalsIgnoreCase(catName.trim());
+                            })
+                            .findFirst().orElse(null);
+                    if (catObj == null) {
+                        System.out.println("SCORE CALC: Category not found: '" + catName + "'");
+                        continue;
+                    }
 
-                // Check duplicates
-                List<String> validUsers = dupeMap.get(catName).get(word);
-                if (validUsers != null && validUsers.size() > 1) {
-                    score += 5; // Duplicate penalty: 5 pts
-                } else {
-                    score += 10; // Unique: 10 pts
+                    // Include language in cache key to match validation key
+                    // Use the same cache key format as validation (with original category name)
+                    // catName might be translated, but we need to use original for cache lookup
+                    String originalCatName = catObj.getNom();
+                    String key = word + "|" + originalCatName + "|" + App.gameLanguage;
+                    
+                    // If word was not valid (not in cache or false), skip
+                    if (!validationCache.getOrDefault(key, false)) {
+                        System.out.println("SCORE CALC: Word not valid (not in cache): " + key);
+                        continue;
+                    }
+
+                    // Check duplicates - use original category name for dupeMap
+                    Map<String, List<String>> categoryWords = dupeMap.get(originalCatName);
+                    if (categoryWords != null) {
+                        List<String> validUsers = categoryWords.get(word);
+                        if (validUsers != null && validUsers.size() > 1) {
+                            score += 5; // Duplicate penalty: 5 pts
+                            System.out.println("SCORE CALC: Duplicate word, +5 pts");
+                        } else if (validUsers != null) {
+                            score += 10; // Unique: 10 pts
+                            System.out.println("SCORE CALC: Unique word, +10 pts");
+                        }
+                    } else {
+                        System.out.println("SCORE CALC: Category not in dupeMap: " + originalCatName);
+                    }
                 }
+                scores.put(pseudo, score);
             }
-            scores.put(pseudo, score);
-        }
 
-        String jsonScores = gson.toJson(scores);
-        App.networkService.broadcast("RESULTS:" + jsonScores);
+            String jsonScores = gson.toJson(scores);
 
-        // CRITICAL: Host must also show results locally
-        showScoreboardOverlay(jsonScores, true);
+            // Update UI and Broadcast on Main Thread
+            Platform.runLater(() -> {
+                App.networkService.broadcast("RESULTS:" + jsonScores);
+                // CRITICAL: Host must also show results locally
+                roundOver = true;
+                showScoreboardOverlay(jsonScores, true);
+            });
+
+        }).start();
     }
 
     private void startTimer() {
@@ -370,12 +619,12 @@ public class GameController {
     }
 
     private void showWaitingOverlay(String msg) {
-        if (overlayResults == null)
+        if (overlayResults == null || roundOver)
             return;
         Platform.runLater(() -> {
-            lblResultTitle.setText("EN ATTENTE...");
-            txtResultDetails
-                    .setText(msg + "\nLa manche se terminera quand tout le monde aura fini.");
+            lblResultTitle.setText(TranslationUtil.translate("game.waiting"));
+            String waitingMsg = TranslationUtil.translate("game.waiting.msg");
+            txtResultDetails.setText(msg + "\n" + waitingMsg);
             if (btnNextRound != null)
                 btnNextRound.setVisible(false);
             overlayResults.setVisible(true);
@@ -401,9 +650,11 @@ public class GameController {
             HBox row = new HBox(10);
             row.setAlignment(Pos.CENTER_LEFT);
             row.getStyleClass().add("game-card");
-            row.setStyle("-fx-background-color: rgba(255,255,255,0.1); -fx-padding: 10;");
+            row.getStyleClass().add("category-card");
 
-            Label label = new Label(cat.getNom() + " :");
+            // Translate category name based on current language
+            String categoryName = TranslationUtil.translateCategory(cat.getNom());
+            Label label = new Label(categoryName + " :");
             label.setPrefWidth(150);
             label.setFont(new Font(16));
             label.getStyleClass().add("label");
@@ -470,7 +721,7 @@ public class GameController {
                 .forEach(e -> sb.append(String.format("%-20s | %d pts\n", e.getKey(), e.getValue())));
 
         Platform.runLater(() -> {
-            lblResultTitle.setText("CLASSEMENT");
+            lblResultTitle.setText(TranslationUtil.translate("game.results"));
             txtResultDetails.setText(sb.toString());
 
             // Only Host can see "Next Round"
@@ -492,7 +743,7 @@ public class GameController {
         resultats.forEach((k, v) -> sb.append(String.format("%-20s : %s\n", k, v ? "✅ +10" : "❌")));
 
         Platform.runLater(() -> {
-            lblResultTitle.setText("RÉSULTATS DE LA MANCHE");
+            lblResultTitle.setText(TranslationUtil.translate("game.results"));
             txtResultDetails.setText(sb.toString());
             if (btnNextRound != null) {
                 btnNextRound.setVisible(true);
@@ -511,10 +762,12 @@ public class GameController {
                 startNewRoundHost();
             }
         } else {
-            // Solo: Restart immediately
+            // Solo: Restart with countdown
             overlayResults.setVisible(false);
-            moteurJeu.getSessionCourante().demarrerPartie();
+            moteurJeu.demarrerNouvellePartie();
             gameStopped = false;
+            char lettre = moteurJeu.getSessionCourante().getLettreCourante();
+            runCountdown(lettre);
             if (btnValider != null)
                 btnValider.setDisable(false);
             startTimer();
@@ -530,15 +783,185 @@ public class GameController {
         sdao.saveScore(pseudo, moteurJeu.getScore());
     }
 
+    private void showNotification(String message) {
+        if (notificationArea == null)
+            return;
+        notificationArea.toFront(); // Ensure it's on top
+
+        Label toast = new Label(message);
+        toast.getStyleClass().add("notification-toast");
+        toast.setFont(new Font(14));
+
+        notificationArea.getChildren().add(toast);
+
+        // Auto-hide after 3 seconds
+        Timeline fadeOut = new Timeline(
+                new KeyFrame(Duration.seconds(3), e -> {
+                    notificationArea.getChildren().remove(toast);
+                }));
+        fadeOut.play();
+    }
+
+    private void endGameForSoloPlayer() {
+        // Stop timers and game
+        if (countdown != null)
+            countdown.stop();
+        gameStopped = true;
+        roundOver = true;
+        
+        // Broadcast to all clients that game ended
+        if (isHost) {
+            App.networkService.broadcast("GAME_ENDED_SOLO");
+        }
+        
+        // Show alert
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(TranslationUtil.translate("game.quit"));
+            alert.setHeaderText(null);
+            alert.setContentText(TranslationUtil.translate("game.ended.solo"));
+            alert.showAndWait();
+            
+            // Return to main menu
+            try {
+                App.networkService.fermerConnexion();
+                App.setRoot("view/main");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     @FXML
     private void handleRetour() throws IOException {
+        if (isHost) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirmer la sortie");
+            alert.setHeaderText("Arrêter la partie ?");
+            alert.setContentText("Voulez-vous vraiment quitter ? Cela arrêtera la partie pour tout le monde.");
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                App.networkService.broadcast("SERVER_STOP");
+                if (countdown != null)
+                    countdown.stop();
+                App.networkService.fermerConnexion();
+                App.setRoot("view/main");
+            }
+            // Else do nothing
+            return;
+        }
+
         if (countdown != null)
             countdown.stop();
         if (isMultiplayer) {
-            // If Host quits, close server (clients will get disconnected)
+            // Send disconnect message to server before closing
+            String myPseudo = App.networkService.getMyPseudo();
+            if (myPseudo != null && !myPseudo.isEmpty()) {
+                App.networkService.envoyerMessage("DISCONNECT:" + myPseudo);
+            }
+            // Small delay to ensure message is sent
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
             // If Client quits, close connection
             App.networkService.fermerConnexion();
         }
         App.setRoot("view/main");
+    }
+
+    private void runCountdown(char lettre) {
+        if (lblCountdown == null || countdownOverlay == null) {
+            // Fallback if UI not ready
+            if (btnValider != null)
+                btnValider.setDisable(false);
+            startTimer();
+            updateUI();
+            return;
+        }
+
+        // Disable everything during countdown
+        if (btnValider != null)
+            btnValider.setDisable(true);
+        if (champsSaisie != null)
+            champsSaisie.values().forEach(tf -> tf.setDisable(true));
+
+        // Show overlay and countdown
+        countdownOverlay.setVisible(true);
+        countdownOverlay.toFront();
+        lblCountdown.setVisible(true);
+        lblCountdown.toFront();
+
+        // Create scale and fade animations
+        ScaleTransition scaleIn = new ScaleTransition(Duration.millis(300), lblCountdown);
+        scaleIn.setFromX(0.3);
+        scaleIn.setFromY(0.3);
+        scaleIn.setToX(1.0);
+        scaleIn.setToY(1.0);
+        scaleIn.setInterpolator(javafx.animation.Interpolator.EASE_OUT);
+
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(200), lblCountdown);
+        fadeIn.setFromValue(0.0);
+        fadeIn.setToValue(1.0);
+
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(200), lblCountdown);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.0);
+
+        // Sequence: READY (0s) -> SET (1s) -> GO (2s) -> LETTER (3s) -> START (4.5s)
+        Timeline sequence = new Timeline(
+                new KeyFrame(Duration.seconds(0), e -> {
+                    lblCountdown.setText("READY");
+                    lblCountdown.getStyleClass().clear();
+                    lblCountdown.getStyleClass().add("countdown-ready");
+                    scaleIn.play();
+                    fadeIn.play();
+                }),
+                new KeyFrame(Duration.seconds(0.8), e -> {
+                    fadeOut.play();
+                }),
+                new KeyFrame(Duration.seconds(1), e -> {
+                    lblCountdown.setText("SET");
+                    lblCountdown.getStyleClass().clear();
+                    lblCountdown.getStyleClass().add("countdown-set");
+                    fadeIn.play();
+                    scaleIn.play();
+                }),
+                new KeyFrame(Duration.seconds(1.8), e -> {
+                    fadeOut.play();
+                }),
+                new KeyFrame(Duration.seconds(2), e -> {
+                    lblCountdown.setText("GO!");
+                    lblCountdown.getStyleClass().clear();
+                    lblCountdown.getStyleClass().add("countdown-go");
+                    fadeIn.play();
+                    scaleIn.play();
+                }),
+                new KeyFrame(Duration.seconds(2.8), e -> {
+                    fadeOut.play();
+                }),
+                new KeyFrame(Duration.seconds(3), e -> {
+                    lblCountdown.setText(String.valueOf(lettre));
+                    lblCountdown.getStyleClass().clear();
+                    lblCountdown.getStyleClass().add("countdown-letter");
+                    fadeIn.play();
+                    scaleIn.play();
+                }),
+                // Keep letter visible for 1.5 seconds
+                new KeyFrame(Duration.seconds(4.3), e -> {
+                    fadeOut.play();
+                }),
+                new KeyFrame(Duration.seconds(4.5), e -> {
+                    countdownOverlay.setVisible(false);
+                    lblCountdown.setVisible(false);
+                    // Start Game
+                    if (btnValider != null)
+                        btnValider.setDisable(false);
+                    updateUI(); // Generate fields
+                    startTimer();
+                }));
+        sequence.play();
     }
 }

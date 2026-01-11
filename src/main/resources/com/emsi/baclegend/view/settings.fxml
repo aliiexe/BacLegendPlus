@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.VBox?>
@@ -9,7 +10,7 @@
 
 <VBox alignment="CENTER" spacing="32.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.emsi.baclegend.controller.SettingsController" styleClass="root">
    <children>
-      <Label text="PARAMÈTRES" styleClass="label-header" />
+      <Label text="⚙️ PARAMÈTRES" styleClass="label-header" />
       
       <VBox styleClass="game-card" spacing="24" alignment="CENTER" maxWidth="500">
           <Label text="Durée d'une manche" styleClass="label-title" />
@@ -28,9 +29,20 @@
           <Label text="Cette durée s'applique au mode Solo.\nEn multijoueur, l'hôte définit la durée." styleClass="label-muted" wrapText="true" textAlignment="CENTER" />
       </VBox>
       
-      <HBox spacing="16" alignment="CENTER">
-          <Button text="Sauvegarder" onAction="#handleSave" styleClass="button, button-success" />
-          <Button text="← Retour" onAction="#handleRetour" styleClass="button, button-secondary" />
+      <VBox styleClass="game-card" spacing="24" alignment="CENTER" maxWidth="500">
+          <Label text="Langue du jeu" styleClass="label-title" />
+          
+          <VBox spacing="8" alignment="CENTER">
+              <Label text="Choisissez la langue pour la validation des mots:" styleClass="label" />
+              <ComboBox fx:id="comboLanguage" prefWidth="200" style="-fx-background-color: rgba(15, 52, 96, 0.8); -fx-text-fill: white;" />
+          </VBox>
+          
+          <Label text="Cette langue s'applique au mode Solo.\nEn multijoueur, l'hôte définit la langue." styleClass="label-muted" wrapText="true" textAlignment="CENTER" />
+      </VBox>
+      
+      <HBox spacing="20" alignment="CENTER">
+          <Button text="💾 Sauvegarder" onAction="#handleSave" styleClass="button, button-success" prefHeight="50" prefWidth="200" />
+          <Button text="⬅️ Retour" onAction="#handleRetour" styleClass="button, button-secondary" prefHeight="50" prefWidth="200" />
       </HBox>
    </children>
    <padding>

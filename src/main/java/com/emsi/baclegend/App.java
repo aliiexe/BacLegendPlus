@@ -21,6 +21,7 @@ public class App extends Application {
     // Game settings
     public static int gameTimeDuration = 60; // Default 60 seconds
     public static Character sharedLetter = null;
+    public static String gameLanguage = "FR"; // Default French, can be "FR" or "EN"
 
     @Override
     public void start(Stage stage) throws IOException {
