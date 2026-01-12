@@ -350,16 +350,22 @@ public class LobbyController {
     /**
      * Gets the local network IP address (not localhost) for LAN connections.
      * Returns the first non-loopback, non-link-local IPv4 address found.
+     * Excludes common gateway/router addresses (ending in .1 or .254).
      * Falls back to localhost if no network interface is found.
      */
     private String getLocalNetworkIP() {
         try {
+            System.out.println("=== Détection de l'adresse IP réseau ===");
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            
+            java.util.List<String> candidateIPs = new java.util.ArrayList<>();
+            
             while (interfaces.hasMoreElements()) {
                 NetworkInterface networkInterface = interfaces.nextElement();
                 
                 // Skip loopback and inactive interfaces
                 if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    System.out.println("Interface ignorée: " + networkInterface.getName() + " (loopback ou inactive)");
                     continue;
                 }
                 
@@ -375,22 +381,45 @@ public class LobbyController {
                     // Prefer IPv4 addresses (for LAN compatibility)
                     if (address.getHostAddress().contains(".") && !address.getHostAddress().startsWith("127.")) {
                         String ip = address.getHostAddress();
-                        System.out.println("Found network IP: " + ip + " on interface: " + networkInterface.getName());
-                        return ip;
+                        System.out.println("IP trouvée: " + ip + " sur interface: " + networkInterface.getName());
+                        candidateIPs.add(ip);
                     }
                 }
             }
+            
+            // Filter out common gateway/router addresses (usually .1 or .254)
+            for (String ip : candidateIPs) {
+                String[] parts = ip.split("\\.");
+                if (parts.length == 4) {
+                    int lastOctet = Integer.parseInt(parts[3]);
+                    // Skip if it's likely a gateway (ends in .1 or .254)
+                    if (lastOctet != 1 && lastOctet != 254) {
+                        System.out.println("IP sélectionnée: " + ip + " (pas une passerelle)");
+                        return ip;
+                    } else {
+                        System.out.println("IP ignorée (probable passerelle): " + ip);
+                    }
+                }
+            }
+            
+            // If all IPs were gateways, use the first one anyway
+            if (!candidateIPs.isEmpty()) {
+                String ip = candidateIPs.get(0);
+                System.out.println("Aucune IP non-passerelle trouvée, utilisation de: " + ip);
+                return ip;
+            }
+            
         } catch (SocketException e) {
-            System.err.println("Error finding network IP: " + e.getMessage());
+            System.err.println("Erreur lors de la recherche de l'IP réseau: " + e.getMessage());
         }
         
         // Fallback to localhost if no network interface found
         try {
             String localhost = InetAddress.getLocalHost().getHostAddress();
-            System.out.println("Using localhost IP: " + localhost);
+            System.out.println("Utilisation de l'IP localhost: " + localhost);
             return localhost;
         } catch (Exception e) {
-            System.err.println("Error getting localhost IP: " + e.getMessage());
+            System.err.println("Erreur lors de l'obtention de l'IP localhost: " + e.getMessage());
             return "127.0.0.1";
         }
     }

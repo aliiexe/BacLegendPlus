@@ -1,0 +1,128 @@
+==========================================
+GUIDE DE DIAGNOSTIC RÉSEAU
+==========================================
+
+PROBLÈME: Timeout de connexion malgré IP et port corrects
+----------------------------------------------------------
+
+Si vous obtenez un timeout alors que l'IP et le port semblent corrects,
+suivez ces étapes de diagnostic:
+
+ÉTAPE 1: Vérifier que le serveur écoute vraiment
+--------------------------------------------------
+
+Sur la machine HÔTE (serveur), après avoir cliqué sur "Create Server":
+
+1. Ouvrez l'invite de commande (cmd) en tant qu'administrateur
+
+2. Tapez cette commande pour voir les ports en écoute:
+   netstat -an | findstr 9999
+
+3. Vous devriez voir quelque chose comme:
+   TCP    0.0.0.0:9999           0.0.0.0:0              LISTENING
+
+4. Si vous ne voyez PAS cette ligne, le serveur n'écoute pas correctement.
+   Redémarrez l'application et réessayez.
+
+ÉTAPE 2: Vérifier l'adresse IP réelle de la machine
+----------------------------------------------------
+
+Sur la machine HÔTE:
+
+1. Ouvrez l'invite de commande (cmd)
+2. Tapez: ipconfig
+3. Regardez la section "Carte réseau Ethernet" ou "Carte réseau sans fil"
+4. Notez l'adresse IPv4 (ex: 192.168.18.50)
+
+⚠️ IMPORTANT: L'adresse 192.168.18.1 est généralement celle du ROUTEUR,
+pas de votre machine! Vérifiez que l'IP affichée dans le jeu correspond
+bien à l'IP de votre machine, pas à celle du routeur.
+
+ÉTAPE 3: Tester la connectivité réseau
+---------------------------------------
+
+Sur la machine CLIENT:
+
+1. Ouvrez l'invite de commande (cmd)
+2. Tapez: ping [IP_DU_SERVEUR]
+   Exemple: ping 192.168.18.50
+3. Vous devriez recevoir des réponses (4 paquets reçus)
+4. Si le ping échoue, les machines ne sont pas sur le même réseau
+
+ÉTAPE 4: Tester la connexion au port
+-------------------------------------
+
+Sur la machine CLIENT:
+
+1. Ouvrez PowerShell en tant qu'administrateur
+2. Tapez:
+   Test-NetConnection -ComputerName [IP_DU_SERVEUR] -Port 9999
+   Exemple: Test-NetConnection -ComputerName 192.168.18.50 -Port 9999
+
+3. Si "TcpTestSucceeded : True", le port est accessible
+4. Si "TcpTestSucceeded : False", le pare-feu bloque probablement
+
+ÉTAPE 5: Vérifier les logs de l'application
+--------------------------------------------
+
+Sur la machine HÔTE, regardez la console/terminal où l'application tourne.
+Vous devriez voir:
+
+========================================
+SERVEUR DÉMARRÉ
+Port: 9999
+Écoute sur: 0.0.0.0 (toutes les interfaces)
+Statut: En attente de connexions...
+========================================
+Thread serveur démarré, en attente de connexions...
+En attente d'une nouvelle connexion...
+
+Si vous ne voyez PAS ces messages, le serveur ne démarre pas correctement.
+
+Quand un client essaie de se connecter, vous devriez voir:
+>>> NOUVEAU CLIENT CONNECTÉ <<<
+   Adresse: [IP_DU_CLIENT]
+   Port: [PORT_DU_CLIENT]
+
+Si vous ne voyez PAS ce message quand le client essaie de se connecter,
+le problème est probablement le pare-feu.
+
+ÉTAPE 6: Solution rapide - Désactiver temporairement le pare-feu
+------------------------------------------------------------------
+
+⚠️ ATTENTION: Ne faites cela QUE pour tester!
+
+Sur la machine HÔTE:
+
+1. Ouvrez "Pare-feu Windows Defender"
+2. Cliquez sur "Activer ou désactiver le pare-feu Windows Defender"
+3. Désactivez temporairement pour le réseau Privé
+4. Testez la connexion
+5. Si ça fonctionne, réactivez le pare-feu et autorisez Java (voir FIREWALL-FIX.txt)
+6. Si ça ne fonctionne toujours pas, le problème est ailleurs
+
+AMÉLIORATIONS RÉCENTES
+-----------------------
+
+1. ✅ Détection IP améliorée: Évite de retourner l'adresse du routeur (.1 ou .254)
+2. ✅ Logs détaillés: Affiche exactement ce qui se passe côté serveur
+3. ✅ Timeout de connexion: 5 secondes au lieu d'attendre indéfiniment
+4. ✅ Messages d'erreur plus clairs
+
+PROBLÈMES COURANTS
+------------------
+
+1. **IP du routeur au lieu de l'IP de la machine**
+   → Solution: Vérifiez avec ipconfig et utilisez la bonne IP
+
+2. **Pare-feu Windows bloque le port**
+   → Solution: Autorisez Java ou ouvrez le port 9999 (voir FIREWALL-FIX.txt)
+
+3. **Machines sur des réseaux différents**
+   → Solution: Vérifiez que les deux machines sont sur le même réseau Wi-Fi/Ethernet
+
+4. **Serveur ne démarre pas correctement**
+   → Solution: Vérifiez les logs dans la console, redémarrez l'application
+
+5. **Port déjà utilisé**
+   → Solution: Fermez les autres instances de l'application, redémarrez

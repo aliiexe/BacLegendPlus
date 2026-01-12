@@ -89,31 +89,46 @@ public class ServiceReseau {
         isServerRunning = true;
         isConnected = true; // Host assumes connected state
 
-        System.out.println("Serveur démarré sur le port " + serverSocket.getLocalPort() + 
-                          " (écoute sur toutes les interfaces réseau)");
+        int actualPort = serverSocket.getLocalPort();
+        System.out.println("========================================");
+        System.out.println("SERVEUR DÉMARRÉ");
+        System.out.println("Port: " + actualPort);
+        System.out.println("Écoute sur: 0.0.0.0 (toutes les interfaces)");
+        System.out.println("Statut: En attente de connexions...");
+        System.out.println("========================================");
 
         serverThread = new Thread(() -> {
             try {
+                System.out.println("Thread serveur démarré, en attente de connexions...");
                 while (isServerRunning && !serverSocket.isClosed()) {
                     try {
+                        System.out.println("En attente d'une nouvelle connexion...");
                         Socket s = serverSocket.accept();
-                        System.out.println("Nouveau client connecté: " + s.getInetAddress());
+                        System.out.println(">>> NOUVEAU CLIENT CONNECTÉ <<<");
+                        System.out.println("   Adresse: " + s.getInetAddress().getHostAddress());
+                        System.out.println("   Port: " + s.getPort());
                         ClientHandler handler = new ClientHandler(s);
                         clients.add(handler);
                         handler.start();
+                        System.out.println("Client handler démarré. Total clients: " + clients.size());
                         if (messageCallback != null) {
                             messageCallback.onConnectionEstablished();
                         }
                     } catch (IOException e) {
-                        if (isServerRunning)
-                            System.err.println("Erreur accept: " + e.getMessage());
+                        if (isServerRunning) {
+                            System.err.println("Erreur lors de l'acceptation d'une connexion: " + e.getMessage());
+                            e.printStackTrace();
+                        }
                     }
                 }
+                System.out.println("Thread serveur terminé.");
             } catch (Exception e) {
-                // Outer loop error
+                System.err.println("Erreur dans le thread serveur: " + e.getMessage());
+                e.printStackTrace();
             } finally {
                 isServerRunning = false;
                 isConnected = false;
+                System.out.println("Serveur arrêté.");
             }
         });
         serverThread.setDaemon(true);
