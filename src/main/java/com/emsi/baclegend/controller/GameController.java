@@ -108,35 +108,12 @@ public class GameController {
         if (isMultiplayer)
             setupMultiplayerCallbacks();
 
-        // In multiplayer, wait for categories from host (they will be set via CATEGORIES: message)
-        // For solo mode or if categories already received, start the game
-        if (isMultiplayer && !isHost && App.sharedCategories == null) {
-            // Client waiting for categories - will be handled when CATEGORIES: message arrives
-            System.out.println("CLIENT: Waiting for categories from host...");
+        // Use shared letter if available (set by LobbyController)
+        if (App.sharedLetter != null) {
+            moteurJeu.demarrerNouvellePartie(App.sharedLetter);
+            App.sharedLetter = null; // Clear it
         } else {
-            // Use shared categories if available (from host), otherwise load from local DB
-            List<Categorie> categoriesToUse = App.sharedCategories != null ? App.sharedCategories : null;
-            
-            // Use shared letter if available (set by LobbyController)
-            if (App.sharedLetter != null) {
-                if (categoriesToUse != null) {
-                    moteurJeu.demarrerNouvellePartie(categoriesToUse, App.sharedLetter);
-                } else {
-                    moteurJeu.demarrerNouvellePartie(App.sharedLetter);
-                }
-                App.sharedLetter = null; // Clear it
-            } else {
-                if (categoriesToUse != null) {
-                    moteurJeu.demarrerNouvellePartie(categoriesToUse);
-                } else {
-                    moteurJeu.demarrerNouvellePartie();
-                }
-            }
-            
-            // Clear shared categories after use (for next round, new categories will be sent)
-            if (isMultiplayer && !isHost) {
-                App.sharedCategories = null;
-            }
+            moteurJeu.demarrerNouvellePartie();
         }
 
         updateTranslations();
@@ -186,31 +163,10 @@ public class GameController {
         finishedPlayers.clear();
         // Keep disconnectedPlayers to prevent re-notification
 
-        // Load categories from host's database (always use host's categories)
-        com.emsi.baclegend.dao.CategorieDAO categorieDAO = new com.emsi.baclegend.dao.CategorieDAO();
-        List<Categorie> categories = categorieDAO.obtenirToutes();
-        
-        // Serialize categories to JSON
-        java.util.List<java.util.Map<String, Object>> categoriesData = new java.util.ArrayList<>();
-        for (Categorie cat : categories) {
-            java.util.Map<String, Object> catData = new java.util.HashMap<>();
-            catData.put("id", cat.getId());
-            catData.put("nom", cat.getNom());
-            catData.put("estActive", cat.isEstActive());
-            categoriesData.add(catData);
-        }
-        String categoriesJson = gson.toJson(categoriesData);
-        
-        // Broadcast categories to all clients (for each new round)
-        App.networkService.broadcast("CATEGORIES:" + categoriesJson);
-        System.out.println("HOST: Broadcasting " + categories.size() + " categories to all clients for new round");
-        
         // Generate new letter locally first
-        moteurJeu.demarrerNouvellePartie(categories);
-        
+        moteurJeu.demarrerNouvellePartie();
         char lettre = moteurJeu.getSessionCourante().getLettreCourante();
-        System.out.println("HOST: Starting round with letter " + lettre + " and " + 
-                          moteurJeu.getSessionCourante().getCategories().size() + " categories");
+        System.out.println("HOST: Starting round with letter " + lettre);
 
         // Broadcast to clients
         App.networkService.broadcast("LETTER:" + lettre);
@@ -297,62 +253,10 @@ public class GameController {
     }
 
     private void handleNetworkMessage(String message) {
-        if (message.startsWith("CATEGORIES:")) {
-            // Client receives categories from host
-            String categoriesJson = message.substring(11);
-            System.out.println("CLIENT: Received categories from host");
-            
-            try {
-                // Parse JSON categories
-                Type listType = new TypeToken<List<Map<String, Object>>>(){}.getType();
-                List<Map<String, Object>> categoriesData = gson.fromJson(categoriesJson, listType);
-                
-                // Convert to Categorie objects
-                List<Categorie> categories = new ArrayList<>();
-                for (Map<String, Object> catData : categoriesData) {
-                    int id = ((Double) catData.get("id")).intValue();
-                    String nom = (String) catData.get("nom");
-                    boolean estActive = (Boolean) catData.get("estActive");
-                    categories.add(new Categorie(id, nom, estActive));
-                }
-                
-                // Store categories for use (will be used when LETTER: arrives)
-                App.sharedCategories = categories;
-                System.out.println("CLIENT: Loaded " + categories.size() + " categories from host");
-                
-                // Store categories - they will be used when LETTER: message arrives
-                // If we already have a letter, start the game immediately
-                if (App.sharedLetter != null) {
-                    // Update session with new categories and letter
-                    moteurJeu.demarrerNouvellePartie(categories, App.sharedLetter);
-                    App.sharedCategories = null; // Clear after use
-                    System.out.println("CLIENT: Started game with received categories and letter " + App.sharedLetter);
-                }
-                // Otherwise, categories will be used when LETTER: message arrives
-            } catch (Exception e) {
-                System.err.println("CLIENT: Error parsing categories: " + e.getMessage());
-                e.printStackTrace();
-            }
-        } else if (message.startsWith("LETTER:")) {
+        if (message.startsWith("LETTER:")) {
             if (message.length() > 7) {
                 char lettre = message.charAt(7);
-                
-                // If we have shared categories, use them; otherwise use existing session or create new one
-                if (App.sharedCategories != null) {
-                    // We received categories, use them with the letter
-                    moteurJeu.demarrerNouvellePartie(App.sharedCategories, lettre);
-                    App.sharedCategories = null; // Clear after use
-                    System.out.println("CLIENT: Started game with categories and letter " + lettre);
-                } else if (moteurJeu.getSessionCourante() != null) {
-                    // Update existing session with new letter
-                    moteurJeu.getSessionCourante().setLettreCourante(lettre);
-                    System.out.println("CLIENT: Updated existing session with letter " + lettre);
-                } else {
-                    // Fallback: create session with local categories (shouldn't happen in multiplayer)
-                    moteurJeu.demarrerNouvellePartie(lettre);
-                    System.out.println("CLIENT: WARNING - Created session with local categories (fallback)");
-                }
-                
+                moteurJeu.getSessionCourante().setLettreCourante(lettre);
                 lblLettre.setText(String.valueOf(lettre));
 
                 if (overlayResults != null)
@@ -360,9 +264,6 @@ public class GameController {
 
                 gameStopped = false;
                 roundOver = false;
-
-                // Regenerate category fields with new categories
-                genererChampsSaisie();
 
                 // Start Countdown instead of starting timer immediately
                 runCountdown(lettre);

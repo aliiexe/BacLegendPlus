@@ -44,28 +44,6 @@ public class MoteurJeu {
         this.gameStopped = false;
     }
 
-    /**
-     * Start a new game with a specific list of categories (used in multiplayer)
-     */
-    public void demarrerNouvellePartie(List<Categorie> categories) {
-        this.sessionCourante = new SessionJeu(categories, App.gameTimeDuration);
-        this.sessionCourante.demarrerPartie();
-        this.score = 0;
-        this.scoreAdversaire = 0;
-        this.gameStopped = false;
-    }
-
-    /**
-     * Start a new game with a specific list of categories and letter (used in multiplayer)
-     */
-    public void demarrerNouvellePartie(List<Categorie> categories, char lettreImposee) {
-        this.sessionCourante = new SessionJeu(categories, App.gameTimeDuration);
-        this.sessionCourante.demarrerPartie(lettreImposee);
-        this.score = 0;
-        this.scoreAdversaire = 0;
-        this.gameStopped = false;
-    }
-
     public Map<String, Boolean> soumettreReponses(Map<Categorie, String> reponses) {
         Map<String, Boolean> resultats = new HashMap<>();
         if (sessionCourante == null) {
