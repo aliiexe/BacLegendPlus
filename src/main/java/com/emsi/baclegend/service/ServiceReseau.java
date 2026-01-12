@@ -83,12 +83,14 @@ public class ServiceReseau {
         fermerConnexion();
 
         // Synchronous Bind: Ensures port is valid immediately
-        serverSocket = new ServerSocket(port);
+        // Bind to 0.0.0.0 to accept connections from all network interfaces
+        serverSocket = new ServerSocket(port, 0, java.net.InetAddress.getByName("0.0.0.0"));
         serverSocket.setReuseAddress(true);
         isServerRunning = true;
         isConnected = true; // Host assumes connected state
 
-        System.out.println("Serveur démarré sur le port " + serverSocket.getLocalPort());
+        System.out.println("Serveur démarré sur le port " + serverSocket.getLocalPort() + 
+                          " (écoute sur toutes les interfaces réseau)");
 
         serverThread = new Thread(() -> {
             try {
@@ -138,16 +140,37 @@ public class ServiceReseau {
         fermerConnexion();
         clientThread = new Thread(() -> {
             try {
-                clientSocket = new Socket(ip, port);
-                System.out.println("Connecté au serveur " + ip);
+                System.out.println("Tentative de connexion à " + ip + ":" + port);
+                // Create socket with connection timeout (5 seconds)
+                clientSocket = new Socket();
+                clientSocket.connect(new java.net.InetSocketAddress(ip, port), 5000);
+                System.out.println("Connecté au serveur " + ip + ":" + port);
                 setupClientStreams();
                 isConnected = true;
                 if (messageCallback != null)
                     messageCallback.onConnectionEstablished();
                 lireMessagesClient();
+            } catch (java.net.SocketTimeoutException e) {
+                isConnected = false;
+                String errorMsg = "Timeout de connexion (5s). Vérifiez:\n" +
+                                 "1. Le serveur est démarré\n" +
+                                 "2. L'adresse IP est correcte: " + ip + "\n" +
+                                 "3. Le port " + port + " n'est pas bloqué par le pare-feu\n" +
+                                 "4. Les deux machines sont sur le même réseau";
+                System.err.println(errorMsg);
+                notifyError(errorMsg);
+            } catch (java.net.ConnectException e) {
+                isConnected = false;
+                String errorMsg = "Impossible de se connecter à " + ip + ":" + port + 
+                                 ". Le serveur est peut-être arrêté ou le port est bloqué par le pare-feu.";
+                System.err.println(errorMsg);
+                notifyError(errorMsg);
             } catch (IOException e) {
                 isConnected = false;
-                notifyError("Connexion échouée: " + e.getMessage());
+                String errorMsg = "Connexion échouée: " + e.getMessage() + 
+                                 "\nIP: " + ip + ", Port: " + port;
+                System.err.println(errorMsg);
+                notifyError(errorMsg);
             }
         });
         clientThread.setDaemon(true);

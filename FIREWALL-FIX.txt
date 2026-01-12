@@ -1,0 +1,103 @@
+==========================================
+CORRECTION DU PROBLÈME DE CONNEXION RÉSEAU
+==========================================
+
+Si vous obtenez "Connexion échouée: connection timed out" lors de la connexion
+à un serveur sur le même réseau, c'est probablement un problème de pare-feu.
+
+SOLUTION 1: Autoriser Java dans le Pare-feu Windows
+----------------------------------------------------
+
+1. Ouvrez "Pare-feu Windows Defender" (recherchez "firewall" dans le menu Démarrer)
+
+2. Cliquez sur "Autoriser une application via le pare-feu"
+
+3. Cliquez sur "Modifier les paramètres" (en haut à droite)
+
+4. Cherchez "Java" dans la liste:
+   - Si Java n'est pas dans la liste, cliquez sur "Autoriser une autre application"
+   - Cliquez sur "Parcourir" et trouvez votre exécutable Java
+     (généralement dans: C:\Program Files\Java\jdk-XX\bin\java.exe)
+   - OU trouvez javaw.exe si vous utilisez JavaFX
+   - Cliquez sur "Ajouter"
+
+5. Cochez les deux cases (Privé ET Public) pour Java
+
+6. Cliquez sur "OK"
+
+SOLUTION 2: Ouvrir le Port 9999 Manuellement
+----------------------------------------------
+
+1. Ouvrez "Pare-feu Windows Defender"
+
+2. Cliquez sur "Paramètres avancés" (à gauche)
+
+3. Cliquez sur "Règles de trafic entrant" (à gauche)
+
+4. Cliquez sur "Nouvelle règle..." (à droite)
+
+5. Sélectionnez "Port" → Suivant
+
+6. Sélectionnez "TCP" et entrez "9999" dans "Ports locaux spécifiques" → Suivant
+
+7. Sélectionnez "Autoriser la connexion" → Suivant
+
+8. Cochez les trois profils (Domaine, Privé, Public) → Suivant
+
+9. Donnez un nom (ex: "BacLegend Port 9999") → Terminer
+
+10. Répétez pour "Règles de trafic sortant" (même procédure)
+
+SOLUTION 3: Vérifier que les Machines sont sur le Même Réseau
+--------------------------------------------------------------
+
+1. Sur la machine HÔTE (serveur):
+   - Ouvrez l'invite de commande (cmd)
+   - Tapez: ipconfig
+   - Notez l'adresse IPv4 (ex: 192.168.1.100)
+
+2. Sur la machine CLIENT:
+   - Ouvrez l'invite de commande (cmd)
+   - Tapez: ipconfig
+   - Vérifiez que l'adresse IPv4 commence par les mêmes 3 nombres
+     (ex: 192.168.1.XXX - les deux doivent être 192.168.1.X)
+
+3. Testez la connectivité:
+   - Sur le CLIENT, tapez: ping [IP_DU_SERVEUR]
+   - Exemple: ping 192.168.1.100
+   - Si vous obtenez des réponses, le réseau fonctionne
+
+SOLUTION 4: Désactiver Temporairement le Pare-feu (TEST UNIQUEMENT)
+--------------------------------------------------------------------
+
+⚠️ ATTENTION: Ne faites cela QUE pour tester. Réactivez-le après!
+
+1. Ouvrez "Pare-feu Windows Defender"
+
+2. Cliquez sur "Activer ou désactiver le pare-feu Windows Defender"
+
+3. Désactivez temporairement pour les réseaux Privé et Public
+
+4. Testez la connexion
+
+5. RÉACTIVEZ le pare-feu immédiatement après le test!
+
+AMÉLIORATIONS APPORTÉES AU CODE
+--------------------------------
+
+1. ✅ Timeout de connexion de 5 secondes (au lieu d'attendre indéfiniment)
+2. ✅ Messages d'erreur plus détaillés
+3. ✅ Le serveur écoute sur toutes les interfaces réseau (0.0.0.0)
+4. ✅ Logs de débogage pour voir l'IP et le port utilisés
+
+VÉRIFICATION
+------------
+
+Après avoir configuré le pare-feu, redémarrez l'application et réessayez.
+
+Les messages dans la console vous indiqueront:
+- L'IP détectée par le serveur
+- Le port utilisé
+- Les détails de la tentative de connexion
+
+Si le problème persiste, vérifiez les logs dans la console pour plus d'informations.

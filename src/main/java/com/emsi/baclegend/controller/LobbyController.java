@@ -114,12 +114,14 @@ public class LobbyController {
         port = App.networkService.getLocalPort();
 
         String ip = getLocalNetworkIP();
+        System.out.println("IP réseau détectée pour le code: " + ip);
+        System.out.println("Port utilisé: " + port);
 
         // Use Short Code Compression
         String code = com.emsi.baclegend.util.CodeUtils.compress(ip, port);
 
         lblRoomCode.setText(code);
-        lblStatusHost.setText("Serveur démarré ! Durée: " + getSelectedTime() + "s");
+        lblStatusHost.setText("Serveur démarré ! IP: " + ip + ", Port: " + port + ", Durée: " + getSelectedTime() + "s");
         lblStatusHost.getStyleClass().add("success-text");
 
         // Disable time and language selection after server started
@@ -154,16 +156,20 @@ public class LobbyController {
         try {
             // Decompress Short Code
             String decoded = com.emsi.baclegend.util.CodeUtils.decompress(code.trim());
+            System.out.println("Code décompressé: " + decoded);
 
             if (decoded != null && decoded.contains(":")) {
                 String[] parts = decoded.split(":");
                 String ip = parts[0];
                 int port = Integer.parseInt(parts[1]);
+                System.out.println("Tentative de connexion à IP: " + ip + ", Port: " + port);
                 App.networkService.connecterAuServeur(ip, port);
             } else {
                 lblStatusJoin.setText("Code invalide !");
             }
         } catch (Exception e) {
+            System.err.println("Erreur lors de la décompression/connexion: " + e.getMessage());
+            e.printStackTrace();
             lblStatusJoin.setText("Erreur: " + e.getMessage());
         }
     }
