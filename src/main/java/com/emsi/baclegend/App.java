@@ -22,6 +22,7 @@ public class App extends Application {
     public static int gameTimeDuration = 60; // Default 60 seconds
     public static Character sharedLetter = null;
     public static String gameLanguage = "FR"; // Default French, can be "FR" or "EN"
+    public static java.util.List<com.emsi.baclegend.model.Categorie> sharedCategories = null; // Categories from host in multiplayer
 
     @Override
     public void start(Stage stage) throws IOException {

@@ -245,7 +245,30 @@ public class LobbyController {
             }
         }
         
-        // Broadcast time setting first
+        // Load categories from host's database
+        com.emsi.baclegend.dao.CategorieDAO categorieDAO = new com.emsi.baclegend.dao.CategorieDAO();
+        java.util.List<com.emsi.baclegend.model.Categorie> categories = categorieDAO.obtenirToutes();
+        
+        // Serialize categories to JSON
+        com.google.gson.Gson gson = new com.google.gson.Gson();
+        java.util.List<java.util.Map<String, Object>> categoriesData = new java.util.ArrayList<>();
+        for (com.emsi.baclegend.model.Categorie cat : categories) {
+            java.util.Map<String, Object> catData = new java.util.HashMap<>();
+            catData.put("id", cat.getId());
+            catData.put("nom", cat.getNom());
+            catData.put("estActive", cat.isEstActive());
+            categoriesData.add(catData);
+        }
+        String categoriesJson = gson.toJson(categoriesData);
+        
+        // Broadcast categories to all clients
+        App.networkService.broadcast("CATEGORIES:" + categoriesJson);
+        System.out.println("HOST: Broadcasting " + categories.size() + " categories to all clients");
+        
+        // Store categories in App for host to use
+        App.sharedCategories = categories;
+        
+        // Broadcast time setting
         App.networkService.broadcast("TIME:" + App.gameTimeDuration);
         
         // Broadcast language setting
